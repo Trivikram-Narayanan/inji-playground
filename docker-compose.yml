@@ -1,20 +1,19 @@
+version: '3.8'
+
 # One-command self-hosting for the playground itself (frontend + backend).
 #
 # This does NOT stand up Certify/Wallet/Verify - that stack is MOSIP's own (each has its
 # own docker-compose in the mosip/inji-certify, inji/mimoto, and inji/inji-verify repos).
-# Point Real Mode at your own deployment, or the public sandbox (the default), entirely
-# via env vars - see backend/.env.example for the full list of REAL_<FORMAT>_* overrides.
-#
-# Usage:
-#   cd infra
-#   cp .env.example .env   # edit if you're pointing at your own Certify/Verify instead of the sandbox
-#   docker compose up --build
+# Real Mode defaults to the public MOSIP Collab sandbox; point it at your own deployment
+# instead by setting the REAL_<FORMAT>_* vars below (see backend/.env.example for the
+# full list) before running `docker compose up --build`.
 
 services:
   backend:
     build:
-      context: ../backend
+      context: ./backend
       dockerfile: Dockerfile
+    container_name: inji-playground-backend
     ports:
       - "3000:3000"
     environment:
@@ -24,6 +23,7 @@ services:
       SANDBOX_REDIRECT_URI: ${SANDBOX_REDIRECT_URI:-}
       MOCK_UIN: ${MOCK_UIN:-}
       MOCK_OTP: ${MOCK_OTP:-}
+      SANDBOX_ACR_VALUES: ${SANDBOX_ACR_VALUES:-}
       REAL_JSONLD_ISSUER_ID: ${REAL_JSONLD_ISSUER_ID:-}
       REAL_JSONLD_CREDENTIAL_CONFIG_ID: ${REAL_JSONLD_CREDENTIAL_CONFIG_ID:-}
       REAL_JSONLD_SCOPE: ${REAL_JSONLD_SCOPE:-}
@@ -56,18 +56,24 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   frontend:
     build:
-      context: ../frontend
+      context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE: ${VITE_API_BASE:-http://localhost:3000/api}
+        # The frontend nginx proxies /api to the backend service (see frontend/nginx.conf),
+        # so a relative path keeps it same-origin - override only if serving the frontend
+        # from somewhere that can't reach "backend:3000" internally.
+        VITE_API_BASE: ${VITE_API_BASE:-/api}
+    container_name: inji-playground-frontend
     ports:
       - "5173:80"
     depends_on:
       backend:
         condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   playground-db:

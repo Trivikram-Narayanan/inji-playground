@@ -7,23 +7,36 @@ The **Inji Interoperability Playground** is a comprehensive, open-source testing
 - **Frontend**: Built with React, TypeScript, Vite, and TailwindCSS. The UI provides a configuration selector, live protocol timeline, protocol inspector, and a historical reporting dashboard.
 - **Backend (BFF)**: Built with Node.js, Express, and SQLite. Acts as an orchestrator that simulates OpenID4VCI (Issuance) and OpenID4VP (Presentation & Verification) flows. It persists test states (`TestRun`), events (`ProtocolEvent`), and reports (`Report`).
 
+
 ## Features
 
 - **Component Mocking**: Mix and match `Inji Certify`, `Inji Wallet`, `Inji Verify`, and `External Mocks` for true cross-ecosystem testing.
 - **Format Support**: Test interactions with W3C VC JSON-LD, SD-JWT VC, and mDoc.
-- **Live Timeline**: Visually tracks the credential lifecycle from Offer to Verification Result.
+- **Live Timeline & Animated Mermaid Sequence Diagram**: Visually tracks the credential lifecycle from Offer to Verification Result, with interactive Mermaid.js protocol diagrams.
+- **Same-Device & Cross-Device Flows**: Test both QR-code cross-device scans and direct `openid4vp://` / `inji://` same-device deep-link handoffs.
 - **Protocol Inspector**: Allows developers to view the beautifully syntax-highlighted raw JSON payloads (Token Exchanges, Submissions) for each step of the flow.
 - **Tamper Mode (Negative Testing)**: Intentionally corrupt claims, invalidate signatures, or expire credentials to test the verifier's resilience.
 - **Interoperability Reporting**: At the end of every flow, an Interoperability Report is generated, logging execution details, durations, outcomes, and error codes.
 - **Historical Dashboard**: See aggregated pass/fail rates, total runs, most common errors, and view a history of all executed scenarios.
+- **Automated CI Matrix Runner**: GitHub Actions workflow that executes all 13 format × tamper scenarios and generates the compatibility matrix.
 
 ## Getting Started
 
-### Prerequisites
+### Option A: One-Command Docker Compose (Recommended)
+
+```bash
+docker compose up --build
+```
+- Frontend UI: `http://localhost:5173`
+- Backend BFF: `http://localhost:3000`
+
+### Option B: Local Node.js Setup
+
+#### Prerequisites
 - Node.js (v18+)
 - npm
 
-### 1. Start the Backend (BFF)
+#### 1. Start the Backend (BFF)
 The backend orchestrator and SQLite database run here.
 
 ```bash
@@ -31,10 +44,9 @@ cd backend
 npm install
 npm run dev
 ```
-
 The backend server will start at `http://localhost:3000`.
 
-### 2. Start the Frontend
+#### 2. Start the Frontend
 The React application provides the visual interface.
 
 ```bash
@@ -42,8 +54,8 @@ cd frontend
 npm install
 npm run dev
 ```
-
 The frontend will start at `http://localhost:5173`.
+
 
 ## How to Test
 
@@ -113,6 +125,7 @@ Full specification suite lives in [`files/`](files/):
 | [`08_Environment_Setup_Guide.md`](files/08_Environment_Setup_Guide.md) | Local/sandbox setup |
 | [`09_Test_Plan.md`](files/09_Test_Plan.md) | Test matrix & cases |
 | [`10_Report_Templates.md`](files/10_Report_Templates.md) | Report & gap write-up formats |
+| [`12_Enhancements_And_Extensions.md`](files/12_Enhancements_And_Extensions.md) | Mermaid diagrams, same-device flow, Docker, and CI matrix |
 | [`Inji_Interoperability_Playground_Spec.md`](Inji_Interoperability_Playground_Spec.md) | Phased build plan |
 
 **Known gap**: a full local Docker Compose stack for Certify/Wallet/Verify (`08_Environment_Setup_Guide.md` Option A) is out of scope on this machine (no Docker, 8GB RAM) — Real Mode uses the MOSIP Collab sandbox (Option B) instead.
