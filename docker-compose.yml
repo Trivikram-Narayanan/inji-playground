@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: inji-playground-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - MIMOTO_BASE_URL=https://api.collab.mosip.net/v1/mimoto
+      - ESIGNET_BASE_URL=https://esignet-mosipid.collab.mosip.net/v1/esignet
+      - SANDBOX_ISSUER_ID=Mosip
+      - ISSUER_HOST=https://injicertify-mosipid.collab.mosip.net
+      - SANDBOX_CLIENT_ID=mpartner-default-mimoto-mosipid-oidc
+      - SANDBOX_REDIRECT_URI=io.mosip.residentapp.inji://oauthredirect
+      - MOCK_UIN=5860356276
+      - MOCK_OTP=111111
+      - SANDBOX_CREDENTIAL_SCOPE=mosip_identity_vc_ldp
+      - SANDBOX_ACR_VALUES=mosip:idp:acr:generated-code
+      - SANDBOX_TIMEOUT_MS=15000
+      - SANDBOX_TXN_RETRIES=3
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: inji-playground-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
