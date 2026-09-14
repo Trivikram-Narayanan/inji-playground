@@ -4,9 +4,11 @@ import Selector, { type FlowConfig } from './Selector';
 import LiveFlowTimeline, { type FlowStatus, type FlowEvent, TERMINAL_STATUSES } from './LiveFlowTimeline';
 import ProtocolInspector from './ProtocolInspector';
 import ReportView, { type InteropReport } from './ReportView';
+import HeroSection from './HeroSection';
+import { type Credential3DState } from './CredentialCard3D';
 import { useFlowStream } from '../hooks/useFlowStream';
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:3000/api';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000/api';
 
 const MainFlow: React.FC = () => {
   const [flow, setFlow] = useState<FlowStatus | null>(null);
@@ -16,6 +18,18 @@ const MainFlow: React.FC = () => {
   const [isAdvancing, setIsAdvancing] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
+  const [activeFormat, setActiveFormat] = useState('w3c-vc-jsonld');
+
+  // Derive 3D Credential State from the ongoing flow
+  const credential3DState: Credential3DState = React.useMemo(() => {
+    if (!flow) return 'blank';
+    if (flow.result === 'valid') return 'verified';
+    if (flow.result === 'invalid') return 'rejected';
+    if (flow.result === 'valid-but-expired') return 'expired';
+    if (['AUTH_REQUESTED', 'PRESENTED'].includes(flow.status)) return 'transit';
+    if (['OFFER_CREATED', 'TOKEN_EXCHANGED', 'CREDENTIAL_ISSUED'].includes(flow.status)) return 'sealed';
+    return 'blank';
+  }, [flow]);
 
   const fetchReport = async (flowId: string) => {
     try {
@@ -41,10 +55,7 @@ const MainFlow: React.FC = () => {
     }
   };
 
-  // Live updates via SSE once a flow exists - covers Simulated Mode's step-by-step
-  // pacing in full, and Real Mode's presentation/verification phase (Real Mode's
-  // issuance phase completes server-side before the stream connects, so that part
-  // arrives via the initial fetchFlowData call instead).
+  // Live updates via SSE
   useFlowStream(flow?.id ?? null, (update) => {
     if (update.type === 'event') {
       setFlow((prev) => {
@@ -66,10 +77,11 @@ const MainFlow: React.FC = () => {
       setReport(null);
       setShowReport(false);
       setStartError(null);
+      if (config.format) {
+        setActiveFormat(config.format);
+      }
       const res = await axios.post(`${API_BASE}/flows`, config);
       const { flowId } = res.data;
-
-      // Initial fetch
       await fetchFlowData(flowId);
     } catch (error: any) {
       console.error('Error starting flow:', error);
@@ -96,31 +108,59 @@ const MainFlow: React.FC = () => {
     }
   };
 
+  const scrollToSelector = () => {
+    const el = document.getElementById('selector-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
-    <div className="flex flex-col gap-6">
-      {/* Top: Selector UI */}
-      <section className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6 backdrop-blur-sm shadow-xl">
+    <div className="flex flex-col gap-8 pb-12">
+      {/* Editorial Hero with Signature 3D R3F Credential Object */}
+      <HeroSection
+        onStartFlow={scrollToSelector}
+        credentialState={credential3DState}
+        activeFormat={activeFormat}
+      />
+
+      {/* Act I / Configuration: 3-Column Selector */}
+      <section id="selector-section" className="bg-slate-900/70 rounded-2xl border border-slate-800 p-6 lg:p-8 backdrop-blur-xl shadow-xl">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-xs font-mono font-bold">
+            1
+          </span>
+          <h2 className="text-lg font-serif font-bold text-slate-200">Act I: Configure Protocol Parameters</h2>
+        </div>
         <Selector onRunTest={handleRunTest} />
       </section>
 
       {startError && (
-        <div className="bg-red-500/10 border border-red-500/40 text-red-300 rounded-lg px-4 py-3 text-sm flex items-start justify-between gap-4">
+        <div className="bg-rose-500/10 border border-rose-500/40 text-rose-300 rounded-xl px-4 py-3.5 text-sm flex items-start justify-between gap-4 backdrop-blur-md">
           <span>{startError}</span>
-          <button onClick={() => setStartError(null)} className="text-red-400 hover:text-red-200 text-lg leading-none">&times;</button>
+          <button onClick={() => setStartError(null)} className="text-rose-400 hover:text-rose-200 text-lg leading-none cursor-pointer">
+            &times;
+          </button>
         </div>
       )}
 
-      {/* Middle: Live Flow & Bottom: Protocol Inspector */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[500px]">
-        <section className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6 backdrop-blur-sm shadow-xl flex flex-col">
-          <h2 className="text-lg font-semibold mb-4 text-slate-200 flex items-center justify-between">
+      {/* Act II & III: Protocol Exchange & Verification Console */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 min-h-[550px]">
+        {/* Left: Act Rail & Interactive Sequence Diagram */}
+        <section className="bg-slate-900/70 rounded-2xl border border-slate-800 p-6 lg:p-8 backdrop-blur-xl shadow-xl flex flex-col">
+          <h2 className="text-lg font-serif font-bold mb-4 text-slate-200 flex items-center justify-between">
             <span className="flex items-center gap-2">
-              Live Timeline
+              <span className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-xs font-mono font-bold">
+                2
+              </span>
+              Act II & III: Protocol Flow & Verdict
               {flow?.mode === 'real' && (
-                <span className="text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/40 rounded-full px-2 py-0.5 tracking-wide">LIVE</span>
+                <span className="text-[10px] font-mono font-bold bg-rose-500/20 text-rose-400 border border-rose-500/40 rounded-full px-2 py-0.5 tracking-wide">
+                  SANDBOX
+                </span>
               )}
             </span>
-            {isLoading && <span className="text-sm text-indigo-400">Starting...</span>}
+            {isLoading && <span className="text-xs font-mono text-indigo-400 animate-pulse">Initializing...</span>}
           </h2>
           <LiveFlowTimeline
             flow={flow}
@@ -131,8 +171,14 @@ const MainFlow: React.FC = () => {
           />
         </section>
 
-        <section className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6 backdrop-blur-sm shadow-xl flex flex-col">
-          <h2 className="text-lg font-semibold mb-4 text-slate-200">Protocol Inspector</h2>
+        {/* Right: Protocol Inspector */}
+        <section className="bg-slate-900/70 rounded-2xl border border-slate-800 p-6 lg:p-8 backdrop-blur-xl shadow-xl flex flex-col">
+          <h2 className="text-lg font-serif font-bold mb-4 text-slate-200 flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-xs font-mono font-bold">
+              ⚡
+            </span>
+            Protocol Inspector
+          </h2>
           <ProtocolInspector event={selectedEvent} />
         </section>
       </div>
