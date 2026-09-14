@@ -1,0 +1,476 @@
+<title>Failure-Mode Diagnosability</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,600&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+  :root {
+    --paper: #f4f5f1;
+    --paper-raised: #eaece3;
+    --ink: #1a1d1a;
+    --ink-muted: #5c6058;
+    --rule: #d3d6cc;
+    --rule-strong: #1a1d1a;
+    --accent: #1f5f66;
+    --accent-soft: #dcebea;
+    --fail: #a8402a;
+    --ok: #3f7a45;
+    --code-bg: #eceee6;
+    --shadow: 0 1px 2px rgba(20, 22, 18, 0.06);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #14171a;
+      --paper-raised: #1c2023;
+      --ink: #e7e8e2;
+      --ink-muted: #9aa098;
+      --rule: #33383a;
+      --rule-strong: #e7e8e2;
+      --accent: #6fc2c9;
+      --accent-soft: #1c3336;
+      --fail: #e0836a;
+      --ok: #8fcf8f;
+      --code-bg: #1a1e20;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #14171a;
+    --paper-raised: #1c2023;
+    --ink: #e7e8e2;
+    --ink-muted: #9aa098;
+    --rule: #33383a;
+    --rule-strong: #e7e8e2;
+    --accent: #6fc2c9;
+    --accent-soft: #1c3336;
+    --fail: #e0836a;
+    --ok: #8fcf8f;
+    --code-bg: #1a1e20;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size: 17px;
+    line-height: 1.65;
+    padding-inline: 20px;
+    padding-block: 48px 80px;
+  }
+
+  .sheet {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  header.masthead {
+    border-bottom: 1px solid var(--rule-strong);
+    padding-bottom: 22px;
+    margin-bottom: 30px;
+  }
+
+  header.masthead .eyebrow {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  h1.title {
+    font-size: clamp(1.7rem, 4vw, 2.35rem);
+    font-weight: 700;
+    line-height: 1.18;
+    text-wrap: balance;
+    margin: 0 0 14px;
+  }
+
+  .byline {
+    font-size: 15px;
+    color: var(--ink-muted);
+    font-style: italic;
+  }
+
+  .highlights {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    padding: 18px 22px;
+    margin: 30px 0;
+    border-radius: 2px;
+  }
+  .highlights .eyebrow { color: var(--accent); margin-bottom: 10px; }
+  .highlights ul { margin: 0; padding-left: 1.15em; }
+  .highlights li { margin-bottom: 8px; }
+  .highlights li:last-child { margin-bottom: 0; }
+
+  .abstract {
+    margin: 30px 0;
+    padding: 4px 0 4px 20px;
+    border-left: 2px solid var(--rule);
+  }
+  .abstract .eyebrow { margin-bottom: 8px; }
+  .abstract p { margin: 0; }
+  .abstract .lead { font-style: italic; }
+
+  .keywords {
+    margin: 18px 0 34px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+  .keywords .eyebrow { margin-right: 4px; }
+  .kw {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    color: var(--ink-muted);
+    padding: 3px 8px;
+    border-radius: 20px;
+  }
+
+  section.sec { margin: 42px 0; }
+
+  .sec-num {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+    font-weight: 600;
+    margin-right: 0.5ch;
+  }
+
+  h2 {
+    font-size: 1.28rem;
+    font-weight: 700;
+    text-wrap: balance;
+    margin: 0 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  h3 {
+    font-size: 1.02rem;
+    font-weight: 600;
+    font-style: italic;
+    margin: 26px 0 10px;
+  }
+
+  p { margin: 0 0 14px; max-width: 68ch; }
+  section.sec > p:last-child { margin-bottom: 0; }
+
+  code, .mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.86em;
+    background: var(--code-bg);
+    padding: 0.05em 0.35em;
+    border-radius: 3px;
+  }
+
+  .finding {
+    margin: 22px 0;
+    padding: 16px 20px;
+    background: var(--paper-raised);
+    border-radius: 3px;
+    box-shadow: var(--shadow);
+  }
+  .finding .eyebrow { color: var(--accent); margin-bottom: 6px; }
+  .finding p { margin: 0; max-width: none; }
+
+  .tbl-wrap { overflow-x: auto; margin: 20px 0 8px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+  caption {
+    caption-side: top;
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 8px;
+  }
+  th, td {
+    text-align: left;
+    padding: 9px 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  thead th {
+    border-top: 1.5px solid var(--rule-strong);
+    border-bottom: 1px solid var(--rule-strong);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  tbody tr:last-child td { border-bottom: 1.5px solid var(--rule-strong); }
+  td.num { text-align: right; }
+  .tag-fail { color: var(--fail); }
+  .tag-ok { color: var(--ok); }
+  .table-note {
+    font-size: 13px;
+    color: var(--ink-muted);
+    font-style: italic;
+    margin-top: 6px;
+  }
+
+  ol.contrib, ul.plain { padding-left: 1.2em; }
+  ol.contrib li, ul.plain li { margin-bottom: 10px; }
+
+  .threat {
+    margin: 0 0 16px;
+    padding-left: 16px;
+    border-left: 2px solid var(--rule);
+  }
+  .threat b { font-style: italic; }
+
+  .refs {
+    font-size: 14.5px;
+    line-height: 1.7;
+    padding-left: 0;
+    list-style: none;
+    counter-reset: ref;
+  }
+  .refs li {
+    counter-increment: ref;
+    padding-left: 2.6em;
+    position: relative;
+    margin-bottom: 10px;
+  }
+  .refs li::before {
+    content: "[" counter(ref) "]";
+    position: absolute;
+    left: 0;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--ink-muted);
+    font-size: 12.5px;
+  }
+
+  footer.colophon {
+    margin-top: 56px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    font-size: 13.5px;
+    color: var(--ink-muted);
+  }
+  footer.colophon p { max-width: none; }
+
+  @media (max-width: 520px) {
+    body { font-size: 16px; }
+    h1.title { font-size: 1.5rem; }
+  }
+</style>
+
+<div class="sheet">
+
+  <header class="masthead">
+    <div class="eyebrow">
+      <span>Independent Technical Report · Sep 2026</span>
+      <span>Digital Identity &amp; Verifiable Credentials</span>
+    </div>
+    <h1 class="title">Failure-Mode Diagnosability and Interoperability Testing Across W3C&nbsp;VC, SD-JWT, and mdoc Credential Formats</h1>
+    <div class="byline">An empirical study conducted with the MOSIP Inji stack, built on a format-agnostic OpenID4VCI/OpenID4VP testing harness.</div>
+  </header>
+
+  <div class="highlights">
+    <div class="eyebrow">Highlights</div>
+    <ul>
+      <li>A controlled, three-format harness shows SD-JWT and mdoc's digest-then-sign design lets verifiers distinguish a <em>corrupted claim</em> from an <em>invalid signature</em> — a diagnosis JSON-LD's whole-document signing structurally cannot make.</li>
+      <li>Controlled benchmarking (N=20/format) measures JSON-LD issuance and verification at ~900&nbsp;ms versus sub-2&nbsp;ms for SD-JWT and mdoc — a three-order-of-magnitude gap attributable to RDF canonicalization.</li>
+      <li>Integration against MOSIP's live Collab sandbox surfaced a reproducible transaction-loss defect confirmed across two independent eSignet deployments — an interoperability failure class invisible to specification-conformance testing.</li>
+    </ul>
+  </div>
+
+  <div class="abstract">
+    <div class="eyebrow">Abstract</div>
+    <p><span class="lead">OpenID4VCI and OpenID4VP now support three materially different credential encodings</span> — W3C Verifiable Credentials in JSON-LD, IETF SD-JWT VC, and ISO/IEC&nbsp;18013-5 mdoc — each mandated for production deployments such as the EU's eIDAS&nbsp;2.0 and MOSIP's Inji stack. Existing interoperability efforts (the OpenID Foundation conformance suite, DIF's Decentralized Identity Interoperability Profile, the eIDAS testbed) report <em>whether</em> issuer/wallet/verifier pairs interoperate, but not <em>how informatively</em> a verifier can explain a failure once one occurs. We built a format-agnostic interoperability-testing harness that issues, presents, and verifies credentials in all three formats end-to-end, including genuine cryptographic tamper injection, and used it to run a controlled empirical comparison. We report two findings. First, SD-JWT and mdoc let a verifier deterministically distinguish a corrupted claim from an invalidated signature as separate, independently-diagnosable failures, while monolithic JSON-LD signing collapses every tamper type into one indistinguishable <code>SIGNATURE_INVALID</code> outcome — a previously unquantified practical consequence of digest-then-sign design. Second, controlled benchmarking shows JSON-LD issuance and verification costing 800–1400&nbsp;ms per operation against sub-2&nbsp;ms for SD-JWT and mdoc, attributable to RDF canonicalization. As a case study, we report a reproducible transaction-loss defect discovered while integrating against MOSIP's public Collab sandbox, confirmed across two independent eSignet deployments, illustrating the value of testing against live infrastructure rather than conformance suites alone. We discuss implications for verifier error-reporting design, format selection under latency constraints, and interoperability test methodology, and outline the threats to validity of a single-implementation empirical study.</p>
+  </div>
+
+  <div class="keywords">
+    <span class="eyebrow">Keywords</span>
+    <span class="kw">verifiable credentials</span>
+    <span class="kw">OpenID4VCI</span>
+    <span class="kw">OpenID4VP</span>
+    <span class="kw">SD-JWT</span>
+    <span class="kw">mdoc</span>
+    <span class="kw">interoperability testing</span>
+    <span class="kw">MOSIP</span>
+  </div>
+
+  <section class="sec">
+    <h2><span class="sec-num">I.</span>Introduction</h2>
+    <p>The OpenID Foundation's OpenID4VCI [1] and OpenID4VP [2] specifications reached Final status in 2025 and now underpin national and regional digital identity programs, including the EU Digital Identity Wallet under eIDAS&nbsp;2.0 and MOSIP's open-source Inji credentialing stack, deployed or piloted across more than a dozen countries [15]. Both specifications are deliberately format-agnostic: a credential may travel as a W3C Verifiable Credential in JSON-LD [3], as an SD-JWT&nbsp;VC [4], or as an ISO/IEC&nbsp;18013-5 <code>mdoc</code> [5]. eIDAS&nbsp;2.0 mandates support for SD-JWT and mdoc simultaneously [11], and the OpenID Foundation's own November 2025 interoperability event tested wallets and verifiers exclusively against SD-JWT and mdoc pairs (21 and 20 pairs respectively for presentation), with no JSON-LD pairs reported [10].</p>
+    <p>This multiplicity of formats is well documented from a data-model and privacy perspective [12,&nbsp;13], but existing interoperability-testing efforts — the OpenID Foundation conformance suite [9], DIF's Decentralized Identity Interoperability Profile tested via the FIDES testbed [7], and the eIDAS testbed [8] — report pass/fail outcomes for happy-path and negative-path scenarios, but do not, to our knowledge, empirically compare <em>what a verifier can determine about why</em> a presentation failed across formats, nor publish controlled cryptographic-operation latency or payload-size comparisons spanning all three formats issued and verified through one consistent harness.</p>
+    <p>We built the <em>Inji Interoperability Playground</em>, a format-agnostic Backend-for-Frontend that issues, holds, presents, and verifies credentials in all three formats end-to-end, against both a self-contained simulator and MOSIP's live public Collab sandbox, instrumenting every protocol step for inspection. Using this harness we make three contributions:</p>
+    <ol class="contrib">
+      <li>An empirical <strong>failure-mode diagnosability</strong> comparison showing that SD-JWT and mdoc's digest-then-sign designs let a verifier separate a corrupted claim from an invalid signature as distinct, independently-observable outcomes, while JSON-LD's whole-document signing cannot.</li>
+      <li>Controlled <strong>latency and payload-size</strong> measurements (N=20 per format, identical claim sets, single machine) quantifying the JSON-LD canonicalization cost the community has long suspected but, to our knowledge, not previously reported as a controlled cross-format measurement in the OpenID4VCI/VP context.</li>
+      <li>A reproducible <strong>case study</strong> of a state-loss defect discovered in a production-adjacent identity sandbox during real-world integration, illustrating a failure class invisible to specification-conformance testing.</li>
+    </ol>
+  </section>
+
+  <section class="sec">
+    <h2><span class="sec-num">II.</span>Background and Related Work</h2>
+    <h3>A. Protocols and Formats</h3>
+    <p>OpenID4VCI [1] defines issuance via an OAuth2-style authorization/token exchange followed by a proof-of-possession-bound credential request; OpenID4VP [2] defines presentation via a DIF Presentation Exchange [6] <code>presentation_definition</code> and a wallet-returned <code>vp_token</code>. Neither specification prescribes an encoding. W3C VC Data Model&nbsp;2.0 [3] uses JSON-LD with detached linked-data signatures (e.g. Ed25519Signature2020); SD-JWT&nbsp;VC [4] is a signed JWT whose payload carries salted digests (<code>_sd</code>) of individually-disclosable claims, each claim's plaintext travelling alongside as a separate disclosure; ISO/IEC&nbsp;18013-5 <code>mdoc</code> [5] CBOR-encodes claims per namespace and signs a Mobile Security Object containing per-claim digests via COSE_Sign1.</p>
+    <h3>B. Interoperability Testing Efforts</h3>
+    <p>The OpenID Foundation's conformance suite [9] and 2025 interoperability event [10] report pairwise pass rates (73–98%, profile-dependent) across commercial implementations, but results are binary per test case and do not characterize verifier-side error output. DIF's Decentralized Identity Interoperability Profile is exercised through the FIDES Open Interoperability Testbed [7]; the EU's eIDAS testbed similarly validates issuer/wallet pairs against a reference implementation [8]. Academic work has surveyed the DID/VC ecosystem broadly [12], tutorialized SSI interoperability [14], proposed more compact selective-disclosure encodings [13], and built ecosystem-agnostic verifier applications bridging Indy/Aries, EBSI, and EUDI [16]. None of this prior work, to our knowledge, empirically measures failure-mode diagnosability as a distinguishing property, nor reports controlled latency/size benchmarks spanning all three formats issued through one harness.</p>
+    <h3>C. Gap Addressed</h3>
+    <p>The distinction we measure — whether a verifier can tell <em>which kind</em> of tampering occurred, not merely <em>that</em> verification failed — sits between security analysis (asking only whether tampering is detected) and interoperability analysis (asking only whether conforming implementations can talk to each other). We are not aware of prior work quantifying it.</p>
+  </section>
+
+  <section class="sec">
+    <h2><span class="sec-num">III.</span>System Architecture</h2>
+    <p>The playground follows the BFF pattern already common in Inji deployments (Mimoto is the BFF for Inji Wallet): one Node.js/TypeScript service orchestrates every protocol step so all requests/responses are captured centrally, independent of frontend or wallet instrumentation. A <code>TestRun</code> tracks one lifecycle through the state machine</p>
+    <p class="mono" style="display:block; text-align:center; padding:14px; background:var(--code-bg); border-radius:4px; max-width:none; font-size:0.82em; line-height:2;">
+      CREATED → OFFER_CREATED → TOKEN_EXCHANGED → CREDENTIAL_ISSUED →<br>
+      AUTH_REQUESTED → PRESENTED → {VERIFIED_VALID, VERIFIED_INVALID,<br>
+      VERIFIED_EXPIRED} or FAILED
+    </p>
+    <p>with each transition timeout-guarded and published to subscribers over Server-Sent Events for live inspection. Every transition appends an immutable <code>ProtocolEvent</code> (step, actor, raw JSON/CBOR payload, outcome), from which a structured <code>Report</code> (outcome, duration, one of nine error codes, human-readable detail) is generated at every terminal state, success or failure.</p>
+    <p>Format handling is isolated behind one module per format exposing a uniform <code>issue()/verify()/tamper()</code> interface, so the orchestrator, tamper-injection logic, and reporting layer are entirely format-agnostic — the precondition for the comparison in Section&nbsp;V being meaningful rather than an artifact of different test paths.</p>
+  </section>
+
+  <section class="sec">
+    <h2><span class="sec-num">IV.</span>Methodology</h2>
+    <h3>A. Format Implementations</h3>
+    <p><strong>W3C VC (JSON-LD).</strong> Signed with Ed25519Signature2020 over a locally-generated <code>did:key</code>, verified via RDF dataset canonicalization (URDNA2015) and linked-data signature verification; the holder's controller document resolves locally (self-certifying, no network DID registry).</p>
+    <p><strong>SD-JWT VC.</strong> Each claim is individually salted, base64url-disclosed, and SHA-256-digested into an <code>_sd</code> array carried in an EdDSA-signed JWT; the credential serializes as <code>&lt;JWT&gt;~&lt;disclosure&gt;~…</code>.</p>
+    <p><strong>mdoc.</strong> Claims are CBOR-encoded per ISO/IEC&nbsp;18013-5 <code>IssuerSignedItem</code> structures; a Mobile Security Object of SHA-256 digests is COSE_Sign1-signed with ES256. Following the same self-certification principle as <code>did:key</code> above, the signer's public key travels with the credential rather than through an X.509/IACA chain, out of scope here.</p>
+    <h3>B. Tamper Injection</h3>
+    <p>For each format we implement three post-issuance tamper operations on the signed artifact: <strong>bad-signature</strong> (flip a byte in the signature/proof value), <strong>claim-corruption</strong> (mutate one disclosed claim), <strong>expired</strong> (rewrite expiry to the past). All three verifiers check expiry before signature validity — a declared design choice — so a forced-past expiry reports <code>CREDENTIAL_EXPIRED</code> even though the mutation has also invalidated the signature.</p>
+    <h3>C. Benchmark Protocol</h3>
+    <p>For each format we ran N=20 independent issue→verify cycles on a single machine (Apple Silicon, Node.js&nbsp;26), using an identical five-field claim set, recording wall-clock issuance time, verification time, and serialized payload size. All 20 runs verified successfully, isolating baseline cost from tamper-detection behavior.</p>
+    <h3>D. Real-Sandbox Integration</h3>
+    <p>Independently, we integrated the same harness against MOSIP's publicly reachable Collab sandbox, performing an unmodified OpenID4VCI authorization-code flow (headless OTP login against the sandbox's mock identity system) against two separate eSignet deployments backing two different Certify issuers, to determine whether an observed defect was issuer-specific or systemic.</p>
+  </section>
+
+  <section class="sec">
+    <h2><span class="sec-num">V.</span>Empirical Results</h2>
+    <h3>A. Failure-Mode Diagnosability</h3>
+    <p>Table&nbsp;I reports each format's <code>errorCode</code> per tamper type, and whether the underlying signature check itself still passed. Results were 100% deterministic across repeated runs and are additionally encoded as automated regression assertions in our implementation.</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <caption>Table I · Verifier-reported error code by (format, tamper type)</caption>
+        <thead>
+          <tr><th>Format</th><th>bad-signature</th><th>claim-corruption</th><th>expired</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>W3C&nbsp;VC (JSON-LD)</td>
+            <td><code>SIGNATURE_INVALID</code><br><span class="tag-fail">sig: fail</span></td>
+            <td><code>SIGNATURE_INVALID</code><br><span class="tag-fail">sig: fail</span></td>
+            <td><code>CREDENTIAL_EXPIRED</code><br><span class="tag-fail">sig: fail</span></td>
+          </tr>
+          <tr>
+            <td>SD-JWT VC</td>
+            <td><code>SIGNATURE_INVALID</code><br><span class="tag-fail">sig: fail</span></td>
+            <td><code>CLAIM_MISMATCH</code><br><span class="tag-ok">sig: ok</span></td>
+            <td><code>CREDENTIAL_EXPIRED</code><br><span class="tag-fail">sig: fail</span></td>
+          </tr>
+          <tr>
+            <td>mdoc</td>
+            <td><code>SIGNATURE_INVALID</code><br><span class="tag-fail">sig: fail</span></td>
+            <td><code>CLAIM_MISMATCH</code><br><span class="tag-ok">sig: ok</span></td>
+            <td><code>CREDENTIAL_EXPIRED</code><br><span class="tag-fail">sig: fail</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="table-note">sig: ok/fail indicates whether the underlying cryptographic signature check itself still passed.</p>
+    </div>
+
+    <div class="finding">
+      <div class="eyebrow">Finding 1</div>
+      <p>For JSON-LD, claim-corruption and bad-signature are <em>indistinguishable</em> to the verifier — both mutate the signed document and both surface as <code>SIGNATURE_INVALID</code>, because Ed25519Signature2020 signs the whole canonicalized document as one unit. For SD-JWT and mdoc, claim-corruption breaks only the affected disclosure's digest match while the signature itself still verifies — the digest-then-sign design lets these formats report <code>CLAIM_MISMATCH</code>, a strictly more specific diagnosis, at no extra verifier-side cost. A relying party on SD-JWT or mdoc can, for free, distinguish "this field was altered" from "this isn't from who it claims" — a distinction unavailable to JSON-LD without additional protocol machinery the base Data Model does not mandate.</p>
+    </div>
+
+    <h3>B. Latency and Payload Size</h3>
+    <p>Table&nbsp;II summarizes the N=20 benchmark. JSON-LD issuance and verification are roughly three orders of magnitude slower than SD-JWT or mdoc on the same machine, dominated by RDF expansion/canonicalization rather than the Ed25519 operation itself (sub-millisecond in isolation). Payload sizes for this claim set order mdoc&nbsp;&gt;&nbsp;SD-JWT&nbsp;&gt;&nbsp;JSON-LD, though relative ordering is claim-set-dependent (Section&nbsp;VII).</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <caption>Table II · Issue/verify latency and payload size, N=20</caption>
+        <thead>
+          <tr><th>Format</th><th>Issue (ms)</th><th>Verify (ms)</th><th>Size (B)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>W3C VC (JSON-LD)</td><td class="num">910.9 (889.2)</td><td class="num">884.2 (882.2)</td><td class="num">812</td></tr>
+          <tr><td>SD-JWT VC</td><td class="num">1.5 (0.6)</td><td class="num">0.5 (0.4)</td><td class="num">1224</td></tr>
+          <tr><td>mdoc</td><td class="num">0.5 (0.4)</td><td class="num">0.5 (0.4)</td><td class="num">1424</td></tr>
+        </tbody>
+      </table>
+      <p class="table-note">Mean (median) over 20 trials, identical five-field claim set.</p>
+    </div>
+
+    <div class="finding">
+      <div class="eyebrow">Finding 2</div>
+      <p>This corroborates, with controlled measurement, a performance criticism of JSON-LD verifiable credentials that has circulated informally in the standards community, and is consistent with the OpenID Foundation's 2025 interoperability event testing SD-JWT and mdoc almost exclusively [10] — but which we could not find previously reported as a controlled, reproducible, cross-format latency measurement in the OpenID4VCI/VP literature.</p>
+    </div>
+
+    <h3>C. Case Study: A Reproducible Session-State Defect in a Production Sandbox</h3>
+    <p>While integrating our harness against MOSIP's Collab sandbox, a <code>transactionId</code> returned successfully by eSignet's <code>oauth-details</code> endpoint was rejected as <code>invalid_transaction</code> by the immediately-following <code>send-otp</code> call, 100% reproducibly (0/3 initial trials succeeding). To rule out per-issuer misconfiguration we repeated the identical flow against a second, independently-hosted eSignet deployment backing a different Certify issuer; the same failure occurred with the same immediacy. Because the failure was deterministic rather than intermittent across two independent deployments, we hypothesize a systemic issue in how the pre-authentication transaction cache is provisioned (e.g. a caching layer not persisting between requests) rather than a request-shape error or per-tenant flakiness — consistent with unrelated deployment issues already reported by other developers on MOSIP's public community forum. We treat this as a case study in a failure class invisible to specification-conformance suites: conformance tests validate request/response <em>shape</em> against a reference or mock backend, not the operational correctness of a live deployment's session/cache layer, which only surfaces under sustained integration against real, non-mocked infrastructure. Consistent with responsible-disclosure norms, we intend to report this finding to MOSIP's maintainers with the reproduction steps captured by our harness.</p>
+  </section>
+
+  <section class="sec">
+    <h2><span class="sec-num">VI.</span>Discussion</h2>
+    <p><strong>Verifier error reporting.</strong> Relying parties choosing between credential formats should weigh diagnosability alongside the privacy and size trade-offs already documented elsewhere [12,&nbsp;13]: an SD-JWT/mdoc verifier can, at negligible extra cost, report <em>which</em> claim failed integrity checking — information a JSON-LD verifier structurally cannot provide without additional per-claim proof machinery. This has direct implications for fraud triage and user-facing error messages in production wallets and verifiers.</p>
+    <p><strong>Format selection under latency constraints.</strong> The three-order-of-magnitude latency gap we measured is large enough to matter for high-throughput verifier deployments (border control, high-volume KYC) or resource-constrained issuance environments, independent of any privacy or security argument for SD-JWT/mdoc over JSON-LD.</p>
+    <p><strong>Testing methodology.</strong> The case study in Section&nbsp;V-C argues for interoperability test suites to include sustained integration runs against live reference deployments, not only mocked or containerized conformance backends, since state-management defects of this kind are invisible to schema/shape-level conformance checking.</p>
+  </section>
+
+  <section class="sec">
+    <h2><span class="sec-num">VII.</span>Threats to Validity</h2>
+    <p class="threat"><b>Single implementation per format.</b> Our results reflect one library stack per format (<code>jsonld-signatures</code>/<code>@digitalbazaar/vc</code> for JSON-LD; a from-specification SD-JWT implementation using <code>jose</code>; a from-specification mdoc implementation using <code>cbor</code>) rather than a cross-product of independent implementations; absolute latency numbers may not generalize to more optimized JSON-LD processors.</p>
+    <p class="threat"><b>Claim-set size.</b> The five-field claim set is small; relative payload-size ordering across formats is sensitive to claim count and value size and should not be read as a general ranking.</p>
+    <p class="threat"><b>No third-party verifier.</b> Verification runs in the same codebase that issued the credential, which validates internal correctness and format-comparative behavior but does not by itself demonstrate interoperability with an independently-implemented verifier; the diagnosability property, however, follows directly from each specification's signature scope and is not implementation-specific.</p>
+    <p class="threat"><b>Sandbox defect may be transient.</b> The MOSIP sandbox defect reflects the deployment's state at testing time (September 2026) and may already be fixed; we report it as a methodological case study, not a permanent characterization.</p>
+    <p class="threat"><b>No CA/PKI trust-chain validation.</b> Both verification paths deliberately omit X.509/IACA trust-chain validation, consistent with a self-certifying-key model but not representative of a production mdoc deployment validating against a trust list.</p>
+  </section>
+
+  <section class="sec">
+    <h2><span class="sec-num">VIII.</span>Conclusion and Future Work</h2>
+    <p>We built a format-agnostic OpenID4VCI/OpenID4VP interoperability-testing harness spanning W3C VC (JSON-LD), SD-JWT VC, and ISO/IEC&nbsp;18013-5 mdoc, and used it to make two controlled empirical measurements not previously reported in the literature to our knowledge: that digest-then-sign formats give verifiers a strictly more diagnosable failure taxonomy than monolithic JSON-LD signing, and that JSON-LD's RDF canonicalization imposes a roughly three-order-of-magnitude latency cost. A case study against MOSIP's live Collab sandbox surfaced a reproducible, deployment-level defect invisible to conformance testing alone. Future work includes repeating both measurements against independent, standards-certified implementations, extending the tamper taxonomy to selective-disclosure-specific attacks (e.g. disclosure replay across presentations), and formalizing failure-mode diagnosability as a testable requirement within existing conformance suites [9].</p>
+  </section>
+
+  <section class="sec">
+    <h2>References</h2>
+    <ol class="refs">
+      <li>T. Lodderstedt, K. Yasuda, T. Looker, and P. Bastian, "OpenID for Verifiable Credential Issuance 1.0," OpenID Foundation, Final Specification, Sep. 2025.</li>
+      <li>O. Terbu, T. Lodderstedt, K. Yasuda, D. Fett, and J. Heenan, "OpenID for Verifiable Presentations 1.0," OpenID Foundation, Final Specification, Jul. 2025.</li>
+      <li>M. Sporny, T. Thibodeau Jr, I. Herman, G. Cohen, and M. B. Jones, Eds., "Verifiable Credentials Data Model v2.0," W3C Recommendation, May 2025.</li>
+      <li>O. Terbu, D. Fett, and B. Campbell, "SD-JWT-based Verifiable Digital Credentials (SD-JWT VC)," IETF Internet-Draft draft-ietf-oauth-sd-jwt-vc-19, Aug. 2026.</li>
+      <li>ISO/IEC 18013-5:2021, "Personal identification — ISO-compliant driving licence — Part 5: Mobile driving licence (mDL) application," International Organization for Standardization, Geneva, Switzerland, 2021.</li>
+      <li>Decentralized Identity Foundation, "Presentation Exchange v2.1.0," DIF Ratified Specification, 2024.</li>
+      <li>Decentralized Identity Foundation, "Decentralized Identity Interoperability Profile (DIIP)," tested via the FIDES Open Interoperability Testbed, 2024–2025.</li>
+      <li>eIDAS Expert Group, "eIDAS-Testbed for the European Digital Identity Wallet," press communication, Jun. 2024.</li>
+      <li>OpenID Foundation, "Conformance Testing for OpenID for Verifiable Credential Issuance and Presentations," 2025.</li>
+      <li>OpenID Foundation, "HAIP 1.0 with OpenID4VP 1.0 and OpenID4VCI 1.0 Achieve up to 98% in OIDF Interop Testing," Nov. 2025.</li>
+      <li>T. Kawasaki, "Issuing Verifiable Credentials in the SD-JWT VC and mdoc/mDL Formats, Mandated in eIDAS 2.0," 2025.</li>
+      <li>C. Mazzocca, A. Acar, S. Uluagac, R. Montanari, P. Bellavista, and M. Conti, "A Survey on Decentralized Identifiers and Verifiable Credentials," <i>IEEE Communications Surveys &amp; Tutorials</i>, 2025.</li>
+      <li>A. Buldini, C. Mazzocca, R. Montanari, and S. Uluagac, "Compact and Selective Disclosure for Verifiable Credentials," arXiv:2506.00262, 2025.</li>
+      <li>H. Yildiz, A. Küpper, D. Thatmann, S. Göndör, and P. Herbke, "A Tutorial on the Interoperability of Self-Sovereign Identities," arXiv:2208.04692, 2022.</li>
+      <li>MOSIP, "Inji: An Open-Source Credentialing Platform," mosip.io/inji, accessed Sep. 2026.</li>
+      <li>H. Yildiz and A. Küpper, "interID — An Ecosystem-agnostic Verifier Application for Self-sovereign Identity," arXiv:2512.23383, 2025.</li>
+    </ol>
+  </section>
+
+  <footer class="colophon">
+    <p>This is an independent technical report, not peer-reviewed or submitted to a venue. A companion IEEEtran LaTeX source (compiles cleanly on Overleaf) contains the same content typeset for two-column IEEE conference format. All empirical results are reproducible from the accompanying implementation's automated test suite and benchmark script.</p>
+  </footer>
+
+</div>

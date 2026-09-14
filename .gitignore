@@ -1,0 +1,22 @@
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# env
+.env
+.env.local
+
+# runtime db
+*.sqlite
+*.sqlite-journal
+
+# logs
+*.log
+npm-debug.log*
+
+# editor / OS
+.DS_Store
+.idea
+.vscode/*
+!.vscode/extensions.json
