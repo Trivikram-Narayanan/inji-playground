@@ -1,111 +1,84 @@
 import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Float, Environment } from '@react-three/drei';
-import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
-import CredentialMesh from './CredentialMesh';
-import SealGeometry from './SealGeometry';
-import EnvironmentScene from './EnvironmentScene';
-
-// ─── Public types ─────────────────────────────────────────────────────────────
-export type Credential3DState = 'blank' | 'sealed' | 'transit' | 'verified' | 'rejected' | 'expired';
+import type { CredentialState } from '../../types/flow';
+import { CredentialMesh } from './CredentialMesh';
+import { EnvironmentScene } from './EnvironmentScene';
 
 interface CredentialObjectProps {
-  state?: Credential3DState;
+  state: CredentialState;
   format?: string;
   className?: string;
 }
 
-// ─── WebGL Error Boundary ─────────────────────────────────────────────────────
 class WebGLErrorBoundary extends React.Component<
-  { children: React.ReactNode },
+  { children: React.ReactNode; fallback: React.ReactNode },
   { hasError: boolean }
 > {
-  constructor(props: { children: React.ReactNode }) {
+  constructor(props: { children: React.ReactNode; fallback: React.ReactNode }) {
     super(props);
     this.state = { hasError: false };
   }
-  static getDerivedStateFromError() { return { hasError: true }; }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.warn('WebGL Rendering Encountered Issue, switching to fallback:', error);
+  }
 
   render() {
     if (this.state.hasError) {
-      return (
-        <div className="w-full h-full flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-32 h-20 border border-line mx-auto mb-4 flex items-center justify-center">
-              <div className="w-16 h-10 border border-inkDim/40" />
-            </div>
-            <p className="text-xs font-mono text-inkDim">WebGL unavailable</p>
-          </div>
-        </div>
-      );
+      return this.props.fallback;
     }
     return this.props.children;
   }
 }
 
-// ─── Scene content ────────────────────────────────────────────────────────────
-function SceneContent({ state }: { state: Credential3DState }) {
-  return (
-    <>
-      {/* IBL environment — needed for MeshTransmissionMaterial reflections/refractions */}
-      <Environment preset="studio" environmentIntensity={0.4} />
-
-      <EnvironmentScene state={state} />
-
-      {/* Float adds subtle bobbing — speed varies by state */}
-      <Float
-        speed={state === 'transit' ? 2.0 : 1.0}
-        rotationIntensity={state === 'transit' ? 0.3 : 0.1}
-        floatIntensity={state === 'transit' ? 0.5 : 0.3}
-      >
-        <CredentialMesh state={state} />
-        <SealGeometry state={state} />
-      </Float>
-
-      {/* Restrained postprocessing — not a light show */}
-      <EffectComposer>
-        <Bloom
-          luminanceThreshold={0.85}
-          intensity={state === 'sealed' || state === 'verified' ? 0.55 : 0.2}
-          levels={4}
-          mipmapBlur
-        />
-        <Vignette darkness={0.4} offset={0.3} eskil={false} />
-      </EffectComposer>
-    </>
-  );
-}
-
-// ─── Main export ──────────────────────────────────────────────────────────────
-const CredentialObject: React.FC<CredentialObjectProps> = ({
-  state = 'blank',
-  className = '',
+/**
+ * Section 04/05/10: Sophisticated Credential Object 3D Scene.
+ * Configured with solid background color for realistic glass refraction,
+ * dpr clamping [1, 1.5] for high performance, and graceful fallback.
+ */
+export const CredentialObject: React.FC<CredentialObjectProps> = ({
+  state,
+  format = 'w3c-vc-jsonld',
+  className = 'w-full h-full min-h-[360px]',
 }) => {
+  const fallback = (
+    <div className="w-full h-full flex flex-col items-center justify-center border border-line bg-panel p-8 text-center">
+      <div className="w-16 h-10 border border-inkDim/40 mb-3 flex items-center justify-center font-mono text-[10px] text-inkDim">
+        VC
+      </div>
+      <p className="font-ui text-xs text-inkDim uppercase tracking-widest">
+        Digital Credential Object
+      </p>
+      <span className="font-mono text-[10px] text-sealGold mt-1">STATE: {state}</span>
+    </div>
+  );
+
   return (
-    <div
-      className={`relative w-full h-full min-h-[300px] select-none ${className}`}
-      data-cursor="3d"
-    >
-      <WebGLErrorBoundary>
+    <div className={`relative ${className}`}>
+      <WebGLErrorBoundary fallback={fallback}>
         <Canvas
-          camera={{ position: [0, 0, 4.2], fov: 40 }}
+          shadows
           dpr={[1, 1.5]}
           gl={{
-            antialias: true,
             alpha: false,
+            antialias: true,
             powerPreference: 'high-performance',
           }}
-          shadows
+          camera={{ position: [0, 0, 3.8], fov: 42 }}
         >
-          {/* Solid background — required for MeshTransmissionMaterial to refract/transmit */}
-          <color attach="background" args={['#0a0c11']} />
+          {/* Opaque scene background essential for MeshTransmissionMaterial */}
+          <color attach="background" args={['#08090C']} />
+
           <Suspense fallback={null}>
-            <SceneContent state={state} />
+            <EnvironmentScene />
+            <CredentialMesh state={state} format={format} />
           </Suspense>
         </Canvas>
       </WebGLErrorBoundary>
     </div>
   );
 };
-
-export default CredentialObject;

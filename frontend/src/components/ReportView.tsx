@@ -1,140 +1,102 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Download } from 'lucide-react';
-import VerdictSeal from './VerdictSeal';
-
-export interface InteropReport {
-  flow_id: string;
-  issuer: string;
-  wallet: string;
-  verifier: string;
-  format: string;
-  proof_type: string;
-  outcome: 'pass' | 'fail';
-  duration_ms: number;
-  error_code?: string;
-  error_detail?: string;
-  created_at: string;
-}
+import type { InteropReport } from '../types/flow';
+import { VerdictSeal } from './VerdictSeal';
+import { MagneticButton } from './MagneticButton';
 
 interface ReportViewProps {
   report: InteropReport;
-  onClose: () => void;
+  onReset: () => void;
 }
 
-const ReportView: React.FC<ReportViewProps> = ({ report, onClose }) => {
+/**
+ * Sections 19 & 20: Act III Verdict and Architectural Information Hierarchy.
+ * The final verdict dominates the screen, with secondary technical details positioned below.
+ */
+export const ReportView: React.FC<ReportViewProps> = ({ report, onReset }) => {
   const isPass = report.outcome === 'pass';
-  const isExpired = report.error_code === 'CREDENTIAL_EXPIRED';
-
-  const verdict = isPass ? 'verified' : isExpired ? 'expired' : 'rejected';
-
-  const downloadJson = () => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(report, null, 2));
-    const el = document.createElement('a');
-    el.setAttribute('href', dataStr);
-    el.setAttribute('download', `report-${report.flow_id.slice(0, 8)}.json`);
-    el.click();
-  };
+  const outcomeKey: 'pass' | 'fail' | 'expired' =
+    report.error_code === 'CREDENTIAL_EXPIRED'
+      ? 'expired'
+      : isPass
+      ? 'pass'
+      : 'fail';
 
   return (
-    <AnimatePresence>
-      <motion.div
-        className="fixed inset-0 bg-void/90 backdrop-blur-md z-50 flex items-center justify-center p-6"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.25 }}
-        onClick={onClose}
-      >
-        <motion.div
-          className="bg-panel border border-line w-full max-w-xl flex flex-col max-h-[85vh] overflow-hidden"
-          initial={{ y: 24, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 24, opacity: 0 }}
-          transition={{ type: 'spring', damping: 28, stiffness: 360, delay: 0.05 }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="px-8 pt-8 pb-4 border-b border-line flex items-start justify-between">
-            <div>
-              <div className="text-[9px] font-mono text-inkDim tracking-[0.2em] uppercase mb-2">
-                Interoperability Case Dossier
-              </div>
-              <div className="text-[10px] font-mono text-inkDim/50">
-                Flow: {report.flow_id}
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="text-inkDim hover:text-ink text-xl leading-none transition-colors mt-1"
-              data-cursor="pointer"
-            >
-              ×
-            </button>
+    <div className="w-full max-w-4xl mx-auto px-6 py-12 flex flex-col items-center">
+      {/* Chapter Marker */}
+      <span className="font-mono text-xs text-sealGold uppercase tracking-widest mb-6">
+        ACT III // FINAL RESOLUTION
+      </span>
+
+      {/* Primary Hero Moment: Animated Verdict Seal */}
+      <div className="w-full border border-line bg-panel/40 p-8 md:p-12 flex flex-col items-center justify-center mb-8">
+        <VerdictSeal outcome={outcomeKey} />
+
+        {report.error_code && (
+          <div className="mt-4 px-4 py-2 border border-rejected/40 bg-rejected/10 text-rejected font-mono text-xs">
+            ERROR: {report.error_code} — {report.error_detail || 'Verification check failed'}
           </div>
+        )}
+      </div>
 
-          {/* Body */}
-          <div className="flex-1 overflow-y-auto p-8 flex flex-col gap-8">
-            {/* Verdict — using VerdictSeal as the cinematic centre */}
-            <VerdictSeal verdict={verdict} visible={true} />
+      {/* Section 20: Secondary Information Hierarchy */}
+      <div className="w-full border border-line bg-panel/20 p-6 md:p-8 flex flex-col gap-6 mb-8">
+        <div className="flex items-center justify-between border-b border-line pb-4">
+          <span className="font-mono text-xs text-inkDim uppercase tracking-wider">
+            EXCHANGE AUDIT TRAIL
+          </span>
+          <span className="font-mono text-xs text-inkDim">
+            FLOW: {report.flow_id}
+          </span>
+        </div>
 
-            {/* Technical details — two-column mono grid */}
-            <div className="border-t border-line pt-6">
-              <div className="grid grid-cols-2 gap-6">
-                {[
-                  { label: 'Issuer Authority', value: report.issuer },
-                  { label: 'Holder Wallet', value: report.wallet },
-                  { label: 'Relying Party', value: report.verifier },
-                  { label: 'Format', value: report.format },
-                  { label: 'Proof Type', value: report.proof_type },
-                  { label: 'Duration', value: `${report.duration_ms}ms` },
-                ].map(({ label, value }) => (
-                  <div key={label}>
-                    <div className="text-[9px] font-mono text-inkDim tracking-[0.15em] uppercase mb-1">
-                      {label}
-                    </div>
-                    <div className="text-xs font-mono text-ink">{value}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Failure signature */}
-            {!isPass && report.error_code && (
-              <div className="border-t border-line pt-6">
-                <div className="text-[9px] font-mono text-inkDim tracking-[0.15em] uppercase mb-3">
-                  Failure Signature
-                </div>
-                <div className="font-mono text-sm text-rejected mb-2">{report.error_code}</div>
-                {report.error_detail && (
-                  <p className="text-xs font-ui text-inkDim leading-relaxed">{report.error_detail}</p>
-                )}
-              </div>
-            )}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="flex flex-col">
+            <span className="font-mono text-[10px] text-inkDim uppercase">ISSUER</span>
+            <span className="font-mono text-xs text-ink mt-1">{report.issuer}</span>
           </div>
-
-          {/* Footer */}
-          <div className="px-8 pb-6 pt-4 border-t border-line flex items-center justify-between">
-            <button
-              onClick={onClose}
-              className="text-[10px] font-mono text-inkDim border-b border-inkDim/30 pb-px hover:text-ink hover:border-ink/60 transition-colors"
-              data-cursor="pointer"
-            >
-              Dismiss
-            </button>
-            <button
-              onClick={downloadJson}
-              className="flex items-center gap-2 text-[10px] font-mono text-inkDim hover:text-ink transition-colors"
-              data-cursor="pointer"
-            >
-              <Download size={11} />
-              Download JSON
-            </button>
+          <div className="flex flex-col">
+            <span className="font-mono text-[10px] text-inkDim uppercase">WALLET</span>
+            <span className="font-mono text-xs text-ink mt-1">{report.wallet}</span>
           </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+          <div className="flex flex-col">
+            <span className="font-mono text-[10px] text-inkDim uppercase">VERIFIER</span>
+            <span className="font-mono text-xs text-ink mt-1">{report.verifier}</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="font-mono text-[10px] text-inkDim uppercase">FORMAT</span>
+            <span className="font-mono text-xs text-sealGold mt-1 uppercase">
+              {report.format}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 border-t border-line/60 pt-4">
+          <div className="flex flex-col">
+            <span className="font-mono text-[10px] text-inkDim uppercase">PROOF TYPE</span>
+            <span className="font-mono text-xs text-ink mt-1">
+              {report.proof_type || 'Ed25519Signature2020'}
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <span className="font-mono text-[10px] text-inkDim uppercase">TOTAL DURATION</span>
+            <span className="font-mono text-xs text-ink mt-1">{report.duration_ms} ms</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="font-mono text-[10px] text-inkDim uppercase">RECORDED AT</span>
+            <span className="font-mono text-xs text-ink mt-1">
+              {new Date(report.created_at).toLocaleTimeString()}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Affordance */}
+      <div className="flex items-center gap-4">
+        <MagneticButton onClick={onReset} variant="primary">
+          INITIATE NEW EXCHANGE
+        </MagneticButton>
+      </div>
+    </div>
   );
 };
-
-export default ReportView;

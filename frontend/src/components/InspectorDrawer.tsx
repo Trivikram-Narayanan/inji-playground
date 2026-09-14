@@ -1,161 +1,140 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Check } from 'lucide-react';
-import type { FlowEvent } from './LiveFlowTimeline';
-
-/**
- * InspectorDrawer — slides up from bottom when an event is selected.
- * IBM Plex Mono, syntax-highlighted JSON, copy button.
- * This is a developer tool — precision and legibility first.
- */
+import { Copy, Check, ChevronUp, ChevronDown } from 'lucide-react';
+import type { FlowEvent } from '../types/flow';
 
 interface InspectorDrawerProps {
-  event: FlowEvent | null;
-  onClose: () => void;
+  events: FlowEvent[];
+  activeStep?: string;
 }
 
-// ── Minimal JSON syntax highlighter ──────────────────────────────────────────
-function highlightJSON(json: string): string {
-  return json
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(
-      /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g,
-      (match) => {
-        let cls = 'color:#5B7FFF'; // number
-        if (/^"/.test(match)) {
-          if (/:$/.test(match)) {
-            cls = 'color:#EDEFF3'; // key
-          } else {
-            cls = 'color:#3FCC8F'; // string
-          }
-        } else if (/true|false/.test(match)) {
-          cls = 'color:#D8A63D'; // boolean
-        } else if (/null/.test(match)) {
-          cls = 'color:#7C8494'; // null
-        }
-        return `<span style="${cls}">${match}</span>`;
-      }
-    );
-}
-
-function formatPayload(payload: any): string {
-  try {
-    const parsed = typeof payload === 'string' ? JSON.parse(payload) : payload;
-    return JSON.stringify(parsed, null, 2);
-  } catch {
-    return String(payload);
-  }
-}
-
-const InspectorDrawer: React.FC<InspectorDrawerProps> = ({ event, onClose }) => {
+/**
+ * Section 21: Developer Protocol Inspector Drawer.
+ * Slides from bottom, collapsed by default, provides IBM Plex Mono JSON inspection,
+ * syntax tokens, and instant payload copying.
+ */
+export const InspectorDrawer: React.FC<InspectorDrawerProps> = ({ events, activeStep }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const activeEvent =
+    events.find((e) => e.id === selectedEventId) ||
+    events.find((e) => e.step === activeStep) ||
+    events[events.length - 1];
+
   const handleCopy = () => {
-    if (!event) return;
-    navigator.clipboard.writeText(formatPayload(event.payload));
+    if (!activeEvent) return;
+    navigator.clipboard.writeText(JSON.stringify(activeEvent.payload, null, 2));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const statusColor =
-    event?.status === 'success'
-      ? '#3FCC8F'
-      : event?.status === 'error'
-      ? '#E4574F'
-      : '#D8A63D';
-
   return (
-    <AnimatePresence>
-      {event && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            className="fixed inset-0 z-40 bg-void/50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={onClose}
-          />
+    <div className="fixed bottom-0 left-0 right-0 z-40">
+      {/* Collapsed Bar / Trigger */}
+      <div
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full bg-panelLit/95 border-t border-line px-6 py-2.5 flex items-center justify-between cursor-pointer hover:bg-panelLit transition-colors backdrop-blur-md"
+      >
+        <div className="flex items-center gap-4">
+          <span className="font-mono text-xs font-medium text-ink flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-sealGold" />
+            PROTOCOL INSPECTOR
+          </span>
+          <span className="font-mono text-[11px] text-inkDim">
+            {events.length} PAYLOADS RECORDED
+          </span>
+        </div>
 
-          {/* Drawer */}
-          <motion.div
-            className="fixed bottom-0 left-0 right-0 z-50 glass flex flex-col"
-            style={{ maxHeight: '55vh' }}
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 32, stiffness: 400, mass: 0.8 }}
-          >
-            {/* Handle */}
-            <div className="flex justify-center pt-3 pb-2 shrink-0">
-              <div className="w-8 h-px bg-line" />
+        <div className="flex items-center gap-3">
+          {activeEvent && (
+            <span className="font-mono text-[11px] text-inkDim hidden md:inline">
+              STEP: <span className="text-ink">{activeEvent.step}</span>
+            </span>
+          )}
+          <button className="text-inkDim hover:text-ink">
+            {isOpen ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Expanded Inspector Panel */}
+      {isOpen && (
+        <div className="w-full h-80 bg-void/98 border-t border-line flex flex-col md:flex-row backdrop-blur-xl">
+          {/* Step Selector List */}
+          <div className="w-full md:w-72 border-r border-line overflow-y-auto max-h-36 md:max-h-full">
+            <div className="p-3 border-b border-line/60 bg-panel text-[10px] font-mono text-inkDim uppercase tracking-wider">
+              Recorded Protocol Steps
             </div>
-
-            {/* Header */}
-            <div className="px-6 pb-4 border-b border-line shrink-0 flex items-start justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span
-                    className="inline-block w-1.5 h-1.5 rounded-full"
-                    style={{ backgroundColor: statusColor }}
-                  />
-                  <h3 className="text-sm font-mono font-medium text-ink">
-                    {event.step}
-                  </h3>
-                  <span
-                    className="text-[9px] font-mono px-1.5 py-0.5 border tracking-widest uppercase"
-                    style={{ color: statusColor, borderColor: `${statusColor}40` }}
-                  >
-                    {event.status}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 text-[10px] font-mono text-inkDim">
-                  <span className="uppercase tracking-wider">{event.actor}</span>
-                  <span className="text-line">·</span>
-                  <span>{new Date(event.timestamp).toLocaleTimeString()}</span>
-                </div>
+            {events.length === 0 ? (
+              <div className="p-4 font-mono text-xs text-inkDim text-center">
+                Awaiting protocol traffic...
               </div>
+            ) : (
+              events.map((e) => {
+                const isSelected = activeEvent?.id === e.id;
+                return (
+                  <button
+                    key={e.id}
+                    onClick={() => setSelectedEventId(e.id)}
+                    className={`w-full text-left p-3 border-b border-line/30 transition-colors flex flex-col gap-1 focus:outline-none ${
+                      isSelected ? 'bg-panelLit border-l-2 border-l-sealGold' : 'hover:bg-panelLit/40'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs text-ink">{e.step}</span>
+                      <span
+                        className={`font-mono text-[9px] uppercase px-1.5 py-0.5 rounded ${
+                          e.status === 'success'
+                            ? 'text-verified bg-verified/10'
+                            : e.status === 'error'
+                            ? 'text-rejected bg-rejected/10'
+                            : 'text-pending bg-pending/10'
+                        }`}
+                      >
+                        {e.status}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] text-inkDim font-mono">
+                      <span>{e.actor}</span>
+                      <span>{new Date(e.timestamp).toLocaleTimeString()}</span>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
 
-              <div className="flex items-center gap-3">
+          {/* JSON Payload Viewer */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="p-3 border-b border-line/60 bg-panel flex items-center justify-between">
+              <span className="font-mono text-[10px] text-inkDim uppercase tracking-wider">
+                RAW JSON PAYLOAD // {activeEvent ? activeEvent.step : 'NONE'}
+              </span>
+              {activeEvent && (
                 <button
                   onClick={handleCopy}
-                  className="flex items-center gap-1.5 text-[10px] font-mono text-inkDim hover:text-ink transition-colors"
-                  data-cursor="pointer"
+                  className="flex items-center gap-1.5 font-mono text-[11px] text-inkDim hover:text-ink transition-colors px-2 py-1 bg-void border border-line"
                 >
-                  {copied ? (
-                    <><Check size={11} className="text-verified" /><span>Copied</span></>
-                  ) : (
-                    <><Copy size={11} /><span>Copy</span></>
-                  )}
+                  {copied ? <Check size={12} className="text-verified" /> : <Copy size={12} />}
+                  <span>{copied ? 'COPIED' : 'COPY RAW'}</span>
                 </button>
-                <button
-                  onClick={onClose}
-                  className="text-inkDim hover:text-ink text-xl leading-none transition-colors"
-                  data-cursor="pointer"
-                >
-                  ×
-                </button>
-              </div>
+              )}
             </div>
-
-            {/* JSON body — syntax highlighted */}
-            <div className="flex-1 overflow-auto p-6">
-              <pre
-                className="text-xs font-mono leading-relaxed whitespace-pre-wrap break-words"
-                style={{ color: '#EDEFF3' }}
-                dangerouslySetInnerHTML={{
-                  __html: highlightJSON(formatPayload(event.payload)),
-                }}
-              />
+            <div className="flex-1 p-4 overflow-auto bg-void">
+              {activeEvent ? (
+                <pre className="font-mono text-xs text-ink/90 whitespace-pre-wrap leading-relaxed">
+                  {JSON.stringify(activeEvent.payload, null, 2)}
+                </pre>
+              ) : (
+                <div className="h-full flex items-center justify-center font-mono text-xs text-inkDim">
+                  Select a step from the rail to inspect raw parameters
+                </div>
+              )}
             </div>
-          </motion.div>
-        </>
+          </div>
+        </div>
       )}
-    </AnimatePresence>
+    </div>
   );
 };
-
-export default InspectorDrawer;

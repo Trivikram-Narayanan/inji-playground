@@ -1,80 +1,91 @@
-import React, { useRef, useCallback, useEffect } from 'react';
+import React, { useRef } from 'react';
 import gsap from 'gsap';
 
 interface MagneticButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
-  strength?: number;
-  id?: string;
+  className?: string;
+  variant?: 'primary' | 'secondary' | 'subtle';
 }
 
 /**
- * MagneticButton — GSAP quickTo spring attraction.
- * Physical, tactile press feedback.
- * Restricted to exactly 2 instances: hero CTA and selector CTA.
+ * Section 15: Primary CTA button with magnetic spring movement, tactile press,
+ * and disciplined accent usage.
  */
-const MagneticButton: React.FC<MagneticButtonProps> = ({
+export const MagneticButton: React.FC<MagneticButtonProps> = ({
   children,
   className = '',
-  strength = 0.4,
+  variant = 'primary',
+  disabled,
   onClick,
-  id,
-  ...rest
+  ...props
 }) => {
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const xTo = useRef<ReturnType<typeof gsap.quickTo> | null>(null);
-  const yTo = useRef<ReturnType<typeof gsap.quickTo> | null>(null);
+  const contentRef = useRef<HTMLSpanElement>(null);
 
-  useEffect(() => {
-    if (!buttonRef.current) return;
-    xTo.current = gsap.quickTo(buttonRef.current, 'x', { duration: 0.5, ease: 'power3.out' });
-    yTo.current = gsap.quickTo(buttonRef.current, 'y', { duration: 0.5, ease: 'power3.out' });
-    return () => {
-      gsap.set(buttonRef.current, { x: 0, y: 0 });
-    };
-  }, []);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!buttonRef.current || !xTo.current || !yTo.current) return;
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (disabled || !buttonRef.current || !contentRef.current) return;
     const rect = buttonRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const dx = (e.clientX - centerX) * strength;
-    const dy = (e.clientY - centerY) * strength;
-    xTo.current(dx);
-    yTo.current(dy);
-  }, [strength]);
+    const x = e.clientX - (rect.left + rect.width / 2);
+    const y = e.clientY - (rect.top + rect.height / 2);
 
-  const handleMouseLeave = useCallback(() => {
-    if (!xTo.current || !yTo.current) return;
-    xTo.current(0);
-    yTo.current(0);
-  }, []);
+    gsap.to(buttonRef.current, {
+      x: x * 0.28,
+      y: y * 0.28,
+      duration: 0.3,
+      ease: 'power2.out',
+    });
 
-  const handleMouseDown = useCallback(() => {
-    if (!buttonRef.current) return;
-    gsap.to(buttonRef.current, { scale: 0.95, duration: 0.12, ease: 'power2.out' });
-  }, []);
+    gsap.to(contentRef.current, {
+      x: x * 0.14,
+      y: y * 0.14,
+      duration: 0.3,
+      ease: 'power2.out',
+    });
+  };
 
-  const handleMouseUp = useCallback(() => {
-    if (!buttonRef.current) return;
-    gsap.to(buttonRef.current, { scale: 1, duration: 0.3, ease: 'elastic.out(1.2, 0.5)' });
-  }, []);
+  const handleMouseLeave = () => {
+    if (!buttonRef.current || !contentRef.current) return;
+    gsap.to(buttonRef.current, { x: 0, y: 0, duration: 0.5, ease: 'elastic.out(1, 0.4)' });
+    gsap.to(contentRef.current, { x: 0, y: 0, duration: 0.5, ease: 'elastic.out(1, 0.4)' });
+  };
+
+  const handleMouseDown = () => {
+    if (disabled || !buttonRef.current) return;
+    gsap.to(buttonRef.current, { scale: 0.96, duration: 0.1 });
+  };
+
+  const handleMouseUp = () => {
+    if (disabled || !buttonRef.current) return;
+    gsap.to(buttonRef.current, { scale: 1, duration: 0.2 });
+  };
+
+  const baseStyle =
+    'relative inline-flex items-center justify-center font-ui text-xs tracking-wider uppercase font-medium transition-colors select-none focus:outline-none';
+
+  const variants = {
+    primary:
+      'px-8 py-3.5 bg-ink text-void hover:bg-white border border-ink active:bg-inkDim disabled:opacity-30 disabled:pointer-events-none',
+    secondary:
+      'px-6 py-3 bg-panelLit text-ink hover:bg-panel border border-line hover:border-inkDim active:bg-panel disabled:opacity-30 disabled:pointer-events-none',
+    subtle:
+      'px-4 py-2 bg-transparent text-inkDim hover:text-ink border border-transparent hover:border-line disabled:opacity-30 disabled:pointer-events-none',
+  };
 
   return (
     <button
       ref={buttonRef}
-      id={id}
-      className={className}
-      onClick={onClick}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
-      {...rest}
+      onClick={onClick}
+      disabled={disabled}
+      className={`${baseStyle} ${variants[variant]} ${className}`}
+      {...props}
     >
-      {children}
+      <span ref={contentRef} className="relative z-10 flex items-center gap-2">
+        {children}
+      </span>
     </button>
   );
 };
-
-export default MagneticButton;

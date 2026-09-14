@@ -13,11 +13,11 @@ export default {
         line: '#242A33',
         ink: '#EDEFF3',
         inkDim: '#7C8494',
+        accent: '#5B7FFF',
         sealGold: '#C9A24B',
         verified: '#3FCC8F',
         pending: '#D8A63D',
         rejected: '#E4574F',
-        accent: '#5B7FFF',
       },
       fontFamily: {
         display: ['Fraunces', 'serif'],

@@ -1,171 +1,121 @@
 import React, { useEffect, useRef } from 'react';
-
-/**
- * VerdictSeal — the second major cinematic moment.
- * SVG-based seal/check drawn via strokeDashoffset.
- * Fraunces display verdict typography.
- * No alert box. No lucide icon. No coloured background card.
- */
-
-type VerdictType = 'verified' | 'rejected' | 'expired';
+import gsap from 'gsap';
 
 interface VerdictSealProps {
-  verdict: VerdictType;
-  visible: boolean;
-  onViewReport?: () => void;
+  outcome: 'pass' | 'fail' | 'expired';
 }
 
-const VERDICT_CONFIG = {
-  verified: {
-    color: '#3FCC8F',
-    label: 'Verified',
-    sublabel: 'Cryptographic integrity confirmed across trust boundary.',
-  },
-  rejected: {
-    color: '#E4574F',
-    label: 'Rejected',
-    sublabel: 'Presentation signature or claim integrity failed verification.',
-  },
-  expired: {
-    color: '#D8A63D',
-    label: 'Expired',
-    sublabel: 'Signatures valid — validity period has elapsed.',
-  },
-};
-
-const VerdictSeal: React.FC<VerdictSealProps> = ({ verdict, visible, onViewReport }) => {
-  const sealRef = useRef<SVGCircleElement>(null);
-  const checkRef = useRef<SVGPathElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-
-  const config = VERDICT_CONFIG[verdict];
+/**
+ * Section 19: Act III Verdict Seal animation.
+ * Features SVG strokeDashoffset draw animation with power3.out reveal.
+ */
+export const VerdictSeal: React.FC<VerdictSealProps> = ({ outcome }) => {
+  const circleRef = useRef<SVGCircleElement>(null);
+  const pathRef = useRef<SVGPathElement>(null);
 
   useEffect(() => {
-    if (!visible) return;
+    const circle = circleRef.current;
+    const path = pathRef.current;
+    if (!circle || !path) return;
 
-    // Brief delay then trigger CSS animations
-    const t1 = setTimeout(() => {
-      if (sealRef.current) {
-        sealRef.current.style.strokeDashoffset = '0';
-        sealRef.current.style.transition = 'stroke-dashoffset 1.1s cubic-bezier(0.16, 1, 0.3, 1)';
-      }
-    }, 100);
+    const circleLength = circle.getTotalLength();
+    const pathLength = path.getTotalLength();
 
-    const t2 = setTimeout(() => {
-      if (checkRef.current) {
-        checkRef.current.style.strokeDashoffset = '0';
-        checkRef.current.style.transition = 'stroke-dashoffset 0.7s cubic-bezier(0.16, 1, 0.3, 1)';
-      }
-    }, 600);
+    gsap.set(circle, {
+      strokeDasharray: circleLength,
+      strokeDashoffset: circleLength,
+    });
+    gsap.set(path, {
+      strokeDasharray: pathLength,
+      strokeDashoffset: pathLength,
+    });
 
-    const t3 = setTimeout(() => {
-      if (contentRef.current) {
-        contentRef.current.classList.add('verdict-reveal');
-        contentRef.current.style.opacity = '1';
-      }
-    }, 900);
+    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-  }, [visible]);
+    tl.to(circle, {
+      strokeDashoffset: 0,
+      duration: 0.8,
+    }).to(
+      path,
+      {
+        strokeDashoffset: 0,
+        duration: 0.5,
+      },
+      '-=0.2'
+    );
 
-  if (!visible) return null;
+    return () => {
+      tl.kill();
+    };
+  }, [outcome]);
 
-  // SVG path for verified check vs rejected cross vs expired dash
-  const markPath =
-    verdict === 'verified'
-      ? 'M 14 26 L 22 34 L 36 18'
-      : verdict === 'rejected'
-      ? 'M 16 16 L 34 34 M 34 16 L 16 34'
-      : 'M 14 25 L 36 25';
-
-  const markLength = verdict === 'verified' ? 28 : verdict === 'rejected' ? 50 : 22;
+  const config = {
+    pass: {
+      color: '#3FCC8F',
+      label: 'VERIFIED',
+      pathD: 'M28 48 L42 62 L72 32', // Clean Check
+    },
+    fail: {
+      color: '#E4574F',
+      label: 'REJECTED',
+      pathD: 'M32 32 L68 68 M68 32 L32 68', // Fractured Cross
+    },
+    expired: {
+      color: '#D8A63D',
+      label: 'EXPIRED',
+      pathD: 'M50 30 L50 52 L65 52', // Clock Time
+    },
+  }[outcome];
 
   return (
-    <div className="flex flex-col items-center text-center py-10 gap-6">
-      {/* SVG Seal */}
-      <div className="relative">
-        <svg width="100" height="100" viewBox="0 0 50 50" fill="none">
-          {/* Outer ring — draws first */}
+    <div className="flex flex-col items-center justify-center p-6 text-center">
+      <div className="relative w-28 h-28 mb-4">
+        <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+          {/* Subtle background track */}
           <circle
-            ref={sealRef}
-            cx="25"
-            cy="25"
-            r="22"
-            stroke={config.color}
-            strokeWidth="0.8"
-            strokeDasharray="138.2"
-            strokeDashoffset="138.2"
-            strokeLinecap="round"
+            cx="50"
+            cy="50"
+            r="44"
             fill="none"
-            style={{
-              transform: 'rotate(-90deg)',
-              transformOrigin: '50% 50%',
-            }}
+            stroke="#171B22"
+            strokeWidth="2"
           />
-          {/* Tick marks (decorative precision detail) */}
-          {Array.from({ length: 36 }, (_, i) => {
-            const angle = (i / 36) * 360;
-            const r = 20;
-            const isMajor = i % 9 === 0;
-            const len = isMajor ? 1.2 : 0.6;
-            const x1 = 25 + r * Math.cos((angle * Math.PI) / 180);
-            const y1 = 25 + r * Math.sin((angle * Math.PI) / 180);
-            const x2 = 25 + (r + len) * Math.cos((angle * Math.PI) / 180);
-            const y2 = 25 + (r + len) * Math.sin((angle * Math.PI) / 180);
-            return (
-              <line
-                key={i}
-                x1={x1} y1={y1} x2={x2} y2={y2}
-                stroke={config.color}
-                strokeWidth={isMajor ? 0.5 : 0.25}
-                strokeOpacity={isMajor ? 0.5 : 0.2}
-              />
-            );
-          })}
-          {/* Check / cross / dash — draws second */}
-          <path
-            ref={checkRef}
-            d={markPath}
+          {/* Animated animated seal ring */}
+          <circle
+            ref={circleRef}
+            cx="50"
+            cy="50"
+            r="44"
+            fill="none"
             stroke={config.color}
-            strokeWidth={verdict === 'verified' ? 1.8 : 1.5}
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+        </svg>
+
+        {/* Interior Animated Path */}
+        <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full">
+          <path
+            ref={pathRef}
+            d={config.pathD}
+            fill="none"
+            stroke={config.color}
+            strokeWidth="3"
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeDasharray={markLength}
-            strokeDashoffset={markLength}
-            fill="none"
-            style={{ transition: 'none' }}
           />
         </svg>
       </div>
 
-      {/* Verdict typography — appears after seal draws */}
-      <div
-        ref={contentRef}
-        className="flex flex-col items-center gap-3"
-        style={{ opacity: 0 }}
+      <h2
+        className="font-display text-4xl md:text-5xl font-light tracking-wide mb-1"
+        style={{ color: config.color }}
       >
-        <h2
-          className="font-display text-5xl font-light tracking-tight italic"
-          style={{ color: config.color }}
-        >
-          {config.label}
-        </h2>
-        <p className="text-sm text-inkDim font-ui max-w-xs leading-relaxed">
-          {config.sublabel}
-        </p>
-
-        {onViewReport && (
-          <button
-            onClick={onViewReport}
-            className="mt-2 text-xs font-mono text-inkDim border-b border-inkDim/30 pb-px hover:text-ink hover:border-ink/60 transition-colors duration-200"
-            data-cursor="pointer"
-          >
-            Open case dossier
-          </button>
-        )}
-      </div>
+        {config.label}
+      </h2>
+      <span className="font-mono text-xs text-inkDim tracking-widest uppercase">
+        CRYPTOGRAPHIC CHAIN RESOLUTION
+      </span>
     </div>
   );
 };
-
-export default VerdictSeal;
