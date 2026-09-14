@@ -8,31 +8,37 @@ interface ProtocolInspectorProps {
 const ProtocolInspector: React.FC<ProtocolInspectorProps> = ({ event }) => {
   if (!event) {
     return (
-      <div className="flex-1 flex items-center justify-center text-slate-500 border-2 border-dashed border-slate-700 rounded-lg p-6 bg-slate-900/50 h-full">
-        Select an event from the timeline to inspect payload
+      <div className="flex-1 flex items-center justify-center text-inkDim border-2 border-dashed border-line rounded-xl p-6 bg-panel/50 font-ui text-sm h-full">
+        Select a protocol exchange from the timeline or sequence diagram to inspect payload
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-900/80 rounded-lg border border-slate-700 overflow-hidden">
-      <div className="px-4 py-3 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
+    <div className="flex flex-col h-full bg-panel rounded-xl border border-line overflow-hidden shadow-xl">
+      <div className="px-5 py-3.5 border-b border-line bg-panelLit flex justify-between items-center">
         <div>
-          <h3 className="font-medium text-slate-200">{event.step}</h3>
-          <p className="text-xs text-slate-400 mt-0.5">Actor: {event.actor}</p>
+          <h3 className="font-mono text-sm font-semibold text-ink tracking-tight">{event.step}</h3>
+          <p className="text-xs text-inkDim font-mono mt-0.5">
+            Actor: <span className="text-accent uppercase font-medium">{event.actor}</span>
+          </p>
         </div>
-        <span className={`px-2.5 py-1 text-xs rounded-full font-medium ${
-          event.status === 'success' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-          event.status === 'error' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-          'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-        }`}>
+        <span
+          className={`px-2.5 py-1 text-[11px] rounded-full font-mono font-medium border ${
+            event.status === 'success'
+              ? 'bg-verified/15 text-verified border-verified/30'
+              : event.status === 'error'
+              ? 'bg-rejected/15 text-rejected border-rejected/30'
+              : 'bg-pending/15 text-pending border-pending/30'
+          }`}
+        >
           {event.status.toUpperCase()}
         </span>
       </div>
-      
-      <div className="flex-1 overflow-auto p-4 custom-scrollbar">
-        <pre className="text-sm text-slate-300 font-mono whitespace-pre-wrap break-words">
-          {JSON.stringify(JSON.parse(event.payload), null, 2)}
+
+      <div className="flex-1 overflow-auto p-4 bg-void/70 custom-scrollbar">
+        <pre className="text-xs text-ink/90 font-mono whitespace-pre-wrap break-words leading-relaxed selection:bg-accent/30 selection:text-ink">
+          {JSON.stringify(typeof event.payload === 'string' ? JSON.parse(event.payload) : event.payload, null, 2)}
         </pre>
       </div>
     </div>

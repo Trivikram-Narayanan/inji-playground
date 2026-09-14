@@ -125,20 +125,20 @@ const MainFlow: React.FC = () => {
       />
 
       {/* Act I / Configuration: 3-Column Selector */}
-      <section id="selector-section" className="bg-slate-900/70 rounded-2xl border border-slate-800 p-6 lg:p-8 backdrop-blur-xl shadow-xl">
+      <section id="selector-section" className="bg-panel rounded-2xl border border-line p-6 lg:p-8 backdrop-blur-xl shadow-xl">
         <div className="flex items-center gap-2 mb-4">
-          <span className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-xs font-mono font-bold">
+          <span className="w-6 h-6 rounded-full bg-accent/20 text-accent flex items-center justify-center text-xs font-mono font-bold">
             1
           </span>
-          <h2 className="text-lg font-serif font-bold text-slate-200">Act I: Configure Protocol Parameters</h2>
+          <h2 className="text-lg font-display font-semibold text-ink">Act I: Configure Protocol Parameters</h2>
         </div>
         <Selector onRunTest={handleRunTest} />
       </section>
 
       {startError && (
-        <div className="bg-rose-500/10 border border-rose-500/40 text-rose-300 rounded-xl px-4 py-3.5 text-sm flex items-start justify-between gap-4 backdrop-blur-md">
+        <div className="bg-rejected/10 border border-rejected/40 text-rejected rounded-xl px-4 py-3.5 text-sm flex items-start justify-between gap-4 backdrop-blur-md">
           <span>{startError}</span>
-          <button onClick={() => setStartError(null)} className="text-rose-400 hover:text-rose-200 text-lg leading-none cursor-pointer">
+          <button onClick={() => setStartError(null)} className="text-rejected hover:opacity-80 text-lg leading-none cursor-pointer">
             &times;
           </button>
         </div>
@@ -147,20 +147,20 @@ const MainFlow: React.FC = () => {
       {/* Act II & III: Protocol Exchange & Verification Console */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 min-h-[550px]">
         {/* Left: Act Rail & Interactive Sequence Diagram */}
-        <section className="bg-slate-900/70 rounded-2xl border border-slate-800 p-6 lg:p-8 backdrop-blur-xl shadow-xl flex flex-col">
-          <h2 className="text-lg font-serif font-bold mb-4 text-slate-200 flex items-center justify-between">
+        <section className="bg-panel rounded-2xl border border-line p-6 lg:p-8 backdrop-blur-xl shadow-xl flex flex-col">
+          <h2 className="text-lg font-display font-semibold mb-4 text-ink flex items-center justify-between">
             <span className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-xs font-mono font-bold">
+              <span className="w-6 h-6 rounded-full bg-accent/20 text-accent flex items-center justify-center text-xs font-mono font-bold">
                 2
               </span>
               Act II & III: Protocol Flow & Verdict
               {flow?.mode === 'real' && (
-                <span className="text-[10px] font-mono font-bold bg-rose-500/20 text-rose-400 border border-rose-500/40 rounded-full px-2 py-0.5 tracking-wide">
+                <span className="text-[10px] font-mono font-bold bg-rejected/20 text-rejected border border-rejected/40 rounded-full px-2 py-0.5 tracking-wide">
                   SANDBOX
                 </span>
               )}
             </span>
-            {isLoading && <span className="text-xs font-mono text-indigo-400 animate-pulse">Initializing...</span>}
+            {isLoading && <span className="text-xs font-mono text-accent animate-pulse">Initializing...</span>}
           </h2>
           <LiveFlowTimeline
             flow={flow}
@@ -172,9 +172,9 @@ const MainFlow: React.FC = () => {
         </section>
 
         {/* Right: Protocol Inspector */}
-        <section className="bg-slate-900/70 rounded-2xl border border-slate-800 p-6 lg:p-8 backdrop-blur-xl shadow-xl flex flex-col">
-          <h2 className="text-lg font-serif font-bold mb-4 text-slate-200 flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-xs font-mono font-bold">
+        <section className="bg-panel rounded-2xl border border-line p-6 lg:p-8 backdrop-blur-xl shadow-xl flex flex-col">
+          <h2 className="text-lg font-display font-semibold mb-4 text-ink flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-sealGold/20 text-sealGold flex items-center justify-center text-xs font-mono font-bold">
               ⚡
             </span>
             Protocol Inspector

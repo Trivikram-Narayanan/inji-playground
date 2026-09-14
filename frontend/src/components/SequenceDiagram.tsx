@@ -12,19 +12,19 @@ mermaid.initialize({
   theme: 'dark',
   themeVariables: {
     darkMode: true,
-    background: '#0f172a',
-    primaryColor: '#6366f1',
-    primaryTextColor: '#f8fafc',
-    primaryBorderColor: '#818cf8',
-    lineColor: '#94a3b8',
-    secondaryColor: '#1e293b',
-    tertiaryColor: '#334155',
-    actorBorder: '#6366f1',
-    actorBkg: '#1e293b',
-    actorTextColor: '#f8fafc',
-    actorLineColor: '#6366f1',
-    signalColor: '#38bdf8',
-    signalTextColor: '#f8fafc',
+    background: '#08090C',
+    primaryColor: '#5B7FFF',
+    primaryTextColor: '#EDEFF3',
+    primaryBorderColor: '#5B7FFF',
+    lineColor: '#242A33',
+    secondaryColor: '#101318',
+    tertiaryColor: '#171B22',
+    actorBorder: '#5B7FFF',
+    actorBkg: '#101318',
+    actorTextColor: '#EDEFF3',
+    actorLineColor: '#5B7FFF',
+    signalColor: '#C9A24B',
+    signalTextColor: '#EDEFF3',
   },
   securityLevel: 'loose',
 });
@@ -139,7 +139,7 @@ export const SequenceDiagram: React.FC<SequenceDiagramProps> = ({ flow, onEventC
     <div className="flex flex-col h-full gap-4">
       {/* Quick Step Buttons for Inspection */}
       <div className="flex flex-wrap gap-2 text-xs">
-        <span className="text-slate-400 self-center font-medium mr-1">Inspect Step:</span>
+        <span className="text-inkDim self-center font-mono text-[11px] uppercase mr-1">Inspect Step:</span>
         {STEPS_META.map((step) => {
           const ev = flow?.events?.find((e) => e.step === step.id);
           const isDone = completedStepIds.includes(step.id);
@@ -148,11 +148,11 @@ export const SequenceDiagram: React.FC<SequenceDiagramProps> = ({ flow, onEventC
               key={step.id}
               disabled={!ev}
               onClick={() => ev && onEventClick(ev)}
-              className={`px-2.5 py-1 rounded border transition-all ${
+              className={`px-3 py-1.5 rounded-lg border font-mono text-xs transition-all ${
                 ev
-                  ? 'bg-slate-800 text-indigo-300 border-indigo-500/40 hover:bg-indigo-950 hover:border-indigo-400 cursor-pointer'
-                  : 'bg-slate-900/50 text-slate-600 border-slate-800 cursor-not-allowed'
-              } ${isDone ? 'ring-1 ring-emerald-500/30' : ''}`}
+                  ? 'bg-panelLit text-accent border-accent/40 hover:bg-panel hover:border-accent cursor-pointer'
+                  : 'bg-panelLit/40 text-inkDim/40 border-line cursor-not-allowed'
+              } ${isDone ? 'ring-1 ring-verified/40 text-verified' : ''}`}
             >
               {step.label} {isDone ? '✓' : ''}
             </button>
@@ -163,17 +163,17 @@ export const SequenceDiagram: React.FC<SequenceDiagramProps> = ({ flow, onEventC
       {/* SVG Diagram Canvas */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-auto bg-slate-950/60 border border-slate-800 rounded-lg p-4 flex items-center justify-center min-h-[350px] shadow-inner"
+        className="flex-1 overflow-auto bg-void border border-line rounded-xl p-5 flex items-center justify-center min-h-[350px] shadow-inner"
       >
         {renderError ? (
-          <p className="text-sm text-red-400">{renderError}</p>
+          <p className="text-xs font-mono text-rejected">{renderError}</p>
         ) : svgContent ? (
           <div
             className="w-full max-w-full flex justify-center [&_svg]:max-w-full [&_svg]:h-auto transition-opacity duration-300"
             dangerouslySetInnerHTML={{ __html: svgContent }}
           />
         ) : (
-          <p className="text-sm text-slate-500 animate-pulse">Rendering sequence diagram...</p>
+          <p className="text-xs font-mono text-inkDim animate-pulse">Rendering sequence diagram...</p>
         )}
       </div>
     </div>

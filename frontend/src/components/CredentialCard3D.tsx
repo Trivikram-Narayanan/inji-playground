@@ -15,22 +15,22 @@ function CardMesh({ state = 'blank' }: { state: Credential3DState; format?: stri
   const meshRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.PointLight>(null);
 
-  // Dynamic color grading based on credential state
+  // Dynamic color grading based on credential state aligned with token palette
   const stateColor = React.useMemo(() => {
     switch (state) {
       case 'verified':
-        return { emissive: '#10b981', color: '#064e3b', light: '#34d399', intensity: 1.8 };
+        return { emissive: '#3FCC8F', color: '#09291B', light: '#3FCC8F', intensity: 1.8 };
       case 'rejected':
-        return { emissive: '#ef4444', color: '#450a0a', light: '#f87171', intensity: 2.0 };
+        return { emissive: '#E4574F', color: '#2B0E0C', light: '#E4574F', intensity: 2.0 };
       case 'expired':
-        return { emissive: '#f59e0b', color: '#451a03', light: '#fbbf24', intensity: 1.6 };
+        return { emissive: '#D8A63D', color: '#2E2007', light: '#D8A63D', intensity: 1.6 };
       case 'transit':
-        return { emissive: '#8b5cf6', color: '#2e1065', light: '#a78bfa', intensity: 1.5 };
+        return { emissive: '#5B7FFF', color: '#10172A', light: '#5B7FFF', intensity: 1.5 };
       case 'sealed':
-        return { emissive: '#6366f1', color: '#1e1b4b', light: '#818cf8', intensity: 1.4 };
+        return { emissive: '#C9A24B', color: '#1F190B', light: '#C9A24B', intensity: 1.5 };
       case 'blank':
       default:
-        return { emissive: '#334155', color: '#0f172a', light: '#64748b', intensity: 0.8 };
+        return { emissive: '#242A33', color: '#101318', light: '#5B7FFF', intensity: 0.8 };
     }
   }, [state]);
 

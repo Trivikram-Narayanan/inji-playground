@@ -43,17 +43,17 @@ export const CustomCursor: React.FC = () => {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden transition-opacity duration-300">
-      {/* Inner Dot */}
+      {/* Inner Dot using Accent color */}
       <div
-        className="fixed w-2 h-2 bg-indigo-400 rounded-full -translate-x-1/2 -translate-y-1/2 transition-transform duration-75 ease-out shadow-[0_0_8px_rgba(99,102,241,0.8)]"
+        className="fixed w-2 h-2 bg-accent rounded-full -translate-x-1/2 -translate-y-1/2 transition-transform duration-75 ease-out shadow-[0_0_8px_rgba(91,127,255,0.8)]"
         style={{ left: `${position.x}px`, top: `${position.y}px` }}
       />
-      {/* Outer Halo */}
+      {/* Outer Halo using SealGold on hover or Accent border */}
       <div
-        className={`fixed rounded-full border border-indigo-400/40 -translate-x-1/2 -translate-y-1/2 transition-all duration-200 ease-out ${
+        className={`fixed rounded-full border -translate-x-1/2 -translate-y-1/2 transition-all duration-200 ease-out ${
           isHovered
-            ? 'w-12 h-12 bg-indigo-500/10 border-indigo-400 scale-110 backdrop-blur-[1px]'
-            : 'w-8 h-8 scale-100'
+            ? 'w-12 h-12 bg-sealGold/10 border-sealGold scale-110 backdrop-blur-[1px] shadow-[0_0_15px_rgba(201,162,75,0.25)]'
+            : 'w-8 h-8 border-accent/40 scale-100'
         }`}
         style={{ left: `${position.x}px`, top: `${position.y}px` }}
       />

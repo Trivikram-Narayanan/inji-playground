@@ -15,27 +15,27 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   activeFormat = 'W3C VC (JSON-LD)',
 }) => {
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-b from-slate-900/90 via-slate-950 to-slate-950 p-8 lg:p-12 mb-8 shadow-2xl backdrop-blur-xl">
+    <section className="relative overflow-hidden rounded-3xl border border-line bg-gradient-to-b from-panel via-void to-void p-8 lg:p-12 mb-8 shadow-2xl backdrop-blur-xl">
       {/* Background Subtle Radial Glow */}
-      <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[650px] h-[350px] bg-indigo-600/15 rounded-full blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 right-10 w-[400px] h-[250px] bg-emerald-500/10 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[650px] h-[350px] bg-accent/10 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 right-10 w-[400px] h-[250px] bg-sealGold/10 rounded-full blur-3xl" />
 
       <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
         {/* Left Column: Editorial Cinematic Typography */}
         <div className="lg:col-span-7 flex flex-col items-start gap-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium tracking-wide">
-            <Sparkles size={14} className="text-indigo-400 animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent/10 border border-accent/25 text-accent text-xs font-mono font-medium tracking-wide">
+            <Sparkles size={14} className="text-accent animate-pulse" />
             <span>MOSIP INJI CREDENTIALING INTEROPERABILITY</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-100 font-serif leading-[1.15]">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-ink font-display leading-[1.12]">
             A credential no one has to{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-purple-200 to-emerald-300 italic font-serif">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-ink to-sealGold italic font-display">
               trust in advance.
             </span>
           </h1>
 
-          <p className="text-slate-400 text-base lg:text-lg max-w-xl font-sans leading-relaxed">
+          <p className="text-inkDim text-base lg:text-lg max-w-xl font-ui leading-relaxed">
             Simulate, stress-test, and cryptographically verify cross-module OpenID4VCI & OpenID4VP
             exchanges. Inspect raw protocol payloads across W3C JSON-LD, SD-JWT, and mDoc.
           </p>
@@ -43,43 +43,43 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <div className="flex flex-wrap items-center gap-4 pt-2">
             <MagneticButton
               onClick={onStartFlow}
-              className="px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-medium rounded-xl text-sm shadow-[0_0_25px_rgba(99,102,241,0.35)] transition-all flex items-center gap-2 group cursor-pointer"
+              className="px-7 py-3.5 bg-accent hover:bg-accent/90 text-white font-medium rounded-xl text-sm shadow-[0_0_25px_rgba(91,127,255,0.3)] transition-all flex items-center gap-2 group cursor-pointer"
             >
-              <span>Begin Protocol Exchange</span>
+              <span>Begin the exchange</span>
               <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
             </MagneticButton>
 
-            <div className="flex items-center gap-2 text-xs text-slate-400 border border-slate-800/80 bg-slate-900/60 px-3.5 py-2.5 rounded-xl">
-              <Layers size={14} className="text-indigo-400" />
+            <div className="flex items-center gap-2 text-xs text-inkDim border border-line bg-panelLit/80 px-3.5 py-2.5 rounded-xl font-mono">
+              <Layers size={14} className="text-accent" />
               <span>Active Architecture:</span>
-              <span className="text-slate-200 font-semibold">{activeFormat}</span>
+              <span className="text-ink font-semibold">{activeFormat}</span>
             </div>
           </div>
         </div>
 
         {/* Right Column: Signature 3D Credential Canvas */}
         <div className="lg:col-span-5 flex flex-col items-center justify-center relative">
-          <div className="w-full max-w-[420px] aspect-[4/3] rounded-2xl bg-slate-900/40 border border-slate-800/60 shadow-inner relative flex items-center justify-center overflow-hidden">
+          <div className="w-full max-w-[420px] aspect-[4/3] rounded-2xl bg-panel/60 border border-line shadow-inner relative flex items-center justify-center overflow-hidden">
             <CredentialCard3D state={credentialState} format={activeFormat} />
 
             {/* Live Holographic State Badge */}
-            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-[11px] backdrop-blur-md">
+            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between px-3 py-1.5 rounded-xl bg-void/90 border border-line text-[11px] backdrop-blur-md">
               <div className="flex items-center gap-2">
                 <span
                   className={`w-2 h-2 rounded-full ${
                     credentialState === 'verified'
-                      ? 'bg-emerald-400 animate-ping'
+                      ? 'bg-verified animate-ping'
                       : credentialState === 'rejected'
-                      ? 'bg-rose-500 animate-ping'
+                      ? 'bg-rejected animate-ping'
                       : credentialState === 'expired'
-                      ? 'bg-amber-400 animate-ping'
-                      : 'bg-indigo-400'
+                      ? 'bg-pending animate-ping'
+                      : 'bg-accent'
                   }`}
                 />
-                <span className="text-slate-400">Object State:</span>
-                <span className="text-slate-200 font-mono font-semibold uppercase">{credentialState}</span>
+                <span className="text-inkDim font-mono">Object State:</span>
+                <span className="text-ink font-mono font-semibold uppercase">{credentialState}</span>
               </div>
-              <span className="text-indigo-400 font-mono text-[10px]">WebGL R3F</span>
+              <span className="text-accent font-mono text-[10px]">WebGL R3F</span>
             </div>
           </div>
         </div>
