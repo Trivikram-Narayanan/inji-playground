@@ -20,7 +20,7 @@ const ProtocolInspector: React.FC<ProtocolInspectorProps> = ({ event }) => {
         <div>
           <h3 className="font-mono text-sm font-semibold text-ink tracking-tight">{event.step}</h3>
           <p className="text-xs text-inkDim font-mono mt-0.5">
-            Actor: <span className="text-accent uppercase font-medium">{event.actor}</span>
+            Actor: <span className="text-ink uppercase font-semibold">{event.actor}</span>
           </p>
         </div>
         <span

@@ -127,7 +127,7 @@ const MainFlow: React.FC = () => {
       {/* Act I / Configuration: 3-Column Selector */}
       <section id="selector-section" className="bg-panel rounded-2xl border border-line p-6 lg:p-8 backdrop-blur-xl shadow-xl">
         <div className="flex items-center gap-2 mb-4">
-          <span className="w-6 h-6 rounded-full bg-accent/20 text-accent flex items-center justify-center text-xs font-mono font-bold">
+          <span className="w-6 h-6 rounded-full bg-panelLit text-ink border border-line flex items-center justify-center text-xs font-mono font-bold">
             1
           </span>
           <h2 className="text-lg font-display font-semibold text-ink">Act I: Configure Protocol Parameters</h2>
@@ -150,7 +150,7 @@ const MainFlow: React.FC = () => {
         <section className="bg-panel rounded-2xl border border-line p-6 lg:p-8 backdrop-blur-xl shadow-xl flex flex-col">
           <h2 className="text-lg font-display font-semibold mb-4 text-ink flex items-center justify-between">
             <span className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-accent/20 text-accent flex items-center justify-center text-xs font-mono font-bold">
+              <span className="w-6 h-6 rounded-full bg-panelLit text-ink border border-line flex items-center justify-center text-xs font-mono font-bold">
                 2
               </span>
               Act II & III: Protocol Flow & Verdict
@@ -160,7 +160,7 @@ const MainFlow: React.FC = () => {
                 </span>
               )}
             </span>
-            {isLoading && <span className="text-xs font-mono text-accent animate-pulse">Initializing...</span>}
+            {isLoading && <span className="text-xs font-mono text-ink animate-pulse">Initializing...</span>}
           </h2>
           <LiveFlowTimeline
             flow={flow}
@@ -174,7 +174,7 @@ const MainFlow: React.FC = () => {
         {/* Right: Protocol Inspector */}
         <section className="bg-panel rounded-2xl border border-line p-6 lg:p-8 backdrop-blur-xl shadow-xl flex flex-col">
           <h2 className="text-lg font-display font-semibold mb-4 text-ink flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-sealGold/20 text-sealGold flex items-center justify-center text-xs font-mono font-bold">
+            <span className="w-6 h-6 rounded-full bg-panelLit text-ink border border-line flex items-center justify-center text-xs font-mono font-bold">
               ⚡
             </span>
             Protocol Inspector

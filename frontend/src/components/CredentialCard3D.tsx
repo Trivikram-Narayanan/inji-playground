@@ -11,34 +11,56 @@ interface CredentialCard3DProps {
   className?: string;
 }
 
-function CardMesh({ state = 'blank' }: { state: Credential3DState; format?: string }) {
+function CardMesh({ state = 'blank', format: _format }: { state: Credential3DState; format?: string }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.PointLight>(null);
+  const sealMeshRef = useRef<THREE.Mesh>(null);
 
   // Dynamic color grading based on credential state aligned with token palette
+  // 1:1 correspondence to protocol verification lifecycle
   const stateColor = React.useMemo(() => {
     switch (state) {
       case 'verified':
-        return { emissive: '#3FCC8F', color: '#09291B', light: '#3FCC8F', intensity: 1.8 };
+        return { emissive: '#3FCC8F', color: '#071F14', light: '#3FCC8F', intensity: 2.2, sealColor: '#3FCC8F' };
       case 'rejected':
-        return { emissive: '#E4574F', color: '#2B0E0C', light: '#E4574F', intensity: 2.0 };
+        return { emissive: '#E4574F', color: '#240B0A', light: '#E4574F', intensity: 2.2, sealColor: '#E4574F' };
       case 'expired':
-        return { emissive: '#D8A63D', color: '#2E2007', light: '#D8A63D', intensity: 1.6 };
+        return { emissive: '#D8A63D', color: '#241804', light: '#D8A63D', intensity: 1.8, sealColor: '#D8A63D' };
       case 'transit':
-        return { emissive: '#5B7FFF', color: '#10172A', light: '#5B7FFF', intensity: 1.5 };
+        return { emissive: '#5B7FFF', color: '#0C1322', light: '#5B7FFF', intensity: 1.6, sealColor: '#C9A24B' };
       case 'sealed':
-        return { emissive: '#C9A24B', color: '#1F190B', light: '#C9A24B', intensity: 1.5 };
+        return { emissive: '#C9A24B', color: '#1B1407', light: '#C9A24B', intensity: 2.0, sealColor: '#C9A24B' };
       case 'blank':
       default:
-        return { emissive: '#242A33', color: '#101318', light: '#5B7FFF', intensity: 0.8 };
+        return { emissive: '#171B22', color: '#0B0D11', light: '#242A33', intensity: 0.4, sealColor: '#242A33' };
     }
   }, [state]);
 
-  useFrame((_, delta) => {
+  const isSealedOrBeyond = state !== 'blank';
+
+  useFrame(({ camera }, delta) => {
     if (meshRef.current) {
-      // Gentle idle tilting
-      meshRef.current.rotation.y += delta * 0.35;
-      meshRef.current.rotation.x = Math.sin(Date.now() * 0.001) * 0.08;
+      // Idle rotation - tilts slightly more during transit to show movement toward verifier
+      const rotSpeed = state === 'transit' ? 0.6 : 0.25;
+      meshRef.current.rotation.y += delta * rotSpeed;
+      meshRef.current.rotation.x = Math.sin(Date.now() * 0.001) * 0.06;
+
+      // Transit posture: slight forward pitch
+      if (state === 'transit') {
+        meshRef.current.rotation.z = Math.sin(Date.now() * 0.0015) * 0.05;
+      } else {
+        meshRef.current.rotation.z = 0;
+      }
+    }
+
+    // GQ × Audemars Piguet technique: camera centers and subtly pushes in during the ceremonial seal moment
+    const targetZ = state === 'sealed' ? 3.7 : 4.4;
+    camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZ, delta * 2.5);
+
+    // Physical seal stamp scale-in upon issuance
+    if (sealMeshRef.current) {
+      const targetScale = isSealedOrBeyond ? 1 : 0.001;
+      sealMeshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), delta * 5);
     }
   });
 
@@ -51,42 +73,48 @@ function CardMesh({ state = 'blank' }: { state: Credential3DState; format?: stri
         intensity={stateColor.intensity}
         distance={6}
       />
-      <Float speed={1.8} rotationIntensity={0.3} floatIntensity={0.5}>
+      <Float speed={state === 'transit' ? 2.5 : 1.4} rotationIntensity={0.2} floatIntensity={0.4}>
         <mesh ref={meshRef}>
           <RoundedBox args={[3.2, 2.0, 0.12]} radius={0.08} smoothness={4}>
             <meshPhysicalMaterial
               color={stateColor.color}
               emissive={stateColor.emissive}
-              emissiveIntensity={state === 'blank' ? 0.2 : 0.65}
+              emissiveIntensity={state === 'blank' ? 0.1 : 0.7}
               roughness={0.2}
-              metalness={0.7}
+              metalness={0.75}
               clearcoat={0.9}
               clearcoatRoughness={0.1}
               transparent
-              opacity={0.92}
+              opacity={0.94}
             />
           </RoundedBox>
 
-          {/* Core Chip / Holographic Emblem */}
+          {/* Core Chip / Holographic Cryptographic Secure Element */}
           <mesh position={[-1.0, 0.4, 0.08]}>
             <planeGeometry args={[0.6, 0.5]} />
             <meshStandardMaterial
-              color="#fbbf24"
+              color={state === 'blank' ? '#333A44' : '#C9A24B'}
               metalness={0.95}
               roughness={0.25}
-              emissive="#d97706"
-              emissiveIntensity={0.3}
+              emissive={state === 'blank' ? '#171B22' : '#C9A24B'}
+              emissiveIntensity={state === 'blank' ? 0.1 : 0.4}
             />
           </mesh>
 
-          {/* Digital Guilloche / Seal Accent Line */}
-          <mesh position={[0.4, -0.45, 0.08]}>
-            <planeGeometry args={[1.8, 0.06]} />
-            <meshBasicMaterial color={stateColor.light} />
+          {/* Signature Seal Stamp: Appears strictly upon credential_issued (Worldcoin / Audemars Piguet technique) */}
+          <mesh ref={sealMeshRef} position={[0.9, -0.3, 0.08]} scale={0.001}>
+            <ringGeometry args={[0.26, 0.36, 32]} />
+            <meshBasicMaterial color={stateColor.sealColor} transparent opacity={0.9} />
           </mesh>
-          <mesh position={[0.4, -0.65, 0.08]}>
-            <planeGeometry args={[1.4, 0.04]} />
-            <meshBasicMaterial color={stateColor.light} transparent opacity={0.6} />
+
+          {/* Micro-inscribed Guilloche Linework */}
+          <mesh position={[0.1, -0.45, 0.07]}>
+            <planeGeometry args={[1.2, 0.02]} />
+            <meshBasicMaterial color={stateColor.light} transparent opacity={0.4} />
+          </mesh>
+          <mesh position={[0.1, -0.55, 0.07]}>
+            <planeGeometry args={[0.9, 0.02]} />
+            <meshBasicMaterial color={stateColor.light} transparent opacity={0.3} />
           </mesh>
         </mesh>
       </Float>
@@ -98,13 +126,13 @@ export const CredentialCard3D: React.FC<CredentialCard3DProps> = ({ state = 'bla
   return (
     <div className={`relative w-full h-full min-h-[280px] select-none ${className}`}>
       <Canvas
-        camera={{ position: [0, 0, 4.5], fov: 42 }}
+        camera={{ position: [0, 0, 4.4], fov: 42 }}
         dpr={[1, 1.5]}
         gl={{ antialias: true, alpha: true }}
       >
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[5, 5, 5]} intensity={1.2} />
-        <directionalLight position={[-5, -5, -3]} intensity={0.4} color="#6366f1" />
+        <ambientLight intensity={0.5} />
+        <directionalLight position={[5, 5, 5]} intensity={1.0} />
+        <directionalLight position={[-5, -5, -3]} intensity={0.3} color="#242A33" />
         <CardMesh state={state} format={format} />
       </Canvas>
     </div>

@@ -49,7 +49,7 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onClose }) => {
       <div className="bg-panel border border-line shadow-2xl rounded-2xl w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden">
         <div className="px-6 py-4 border-b border-line flex justify-between items-center bg-panelLit">
           <div className="flex items-center gap-3">
-            <FileText className="text-sealGold" size={20} />
+            <FileText className="text-inkDim" size={20} />
             <h2 className="text-lg font-display font-semibold text-ink tracking-tight">Interoperability Case Dossier</h2>
           </div>
           <button
@@ -142,7 +142,7 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onClose }) => {
             onClick={downloadJson}
             className="flex items-center gap-2 px-5 py-2.5 bg-panel hover:bg-line text-ink border border-line rounded-xl transition-all font-medium text-xs shadow-sm cursor-pointer"
           >
-            <Download size={14} className="text-sealGold" />
+            <Download size={14} className="text-inkDim" />
             Open Full Report (JSON)
           </MagneticButton>
         </div>

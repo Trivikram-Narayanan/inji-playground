@@ -47,8 +47,8 @@ const Dashboard: React.FC = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
         <div className="bg-panel rounded-2xl p-5 border border-line shadow-lg flex items-center gap-4">
-          <div className="p-3 bg-accent/15 border border-accent/30 rounded-xl">
-            <Activity className="text-accent" size={20} />
+          <div className="p-3 bg-panelLit border border-line rounded-xl">
+            <Activity className="text-ink" size={20} />
           </div>
           <div>
             <div className="text-2xl font-mono font-bold text-ink">{stats?.totalTests || 0}</div>
@@ -77,8 +77,8 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div className="bg-panel rounded-2xl p-5 border border-line shadow-lg flex items-center gap-4">
-          <div className="p-3 bg-sealGold/15 border border-sealGold/30 rounded-xl">
-            <AlertOctagon className="text-sealGold" size={20} />
+          <div className="p-3 bg-panelLit border border-line rounded-xl">
+            <AlertOctagon className="text-inkDim" size={20} />
           </div>
           <div className="overflow-hidden">
             <div className="text-xs text-inkDim font-medium mb-0.5">Top Failure Code</div>

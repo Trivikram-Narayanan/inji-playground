@@ -150,11 +150,11 @@ export const SequenceDiagram: React.FC<SequenceDiagramProps> = ({ flow, onEventC
               onClick={() => ev && onEventClick(ev)}
               className={`px-3 py-1.5 rounded-lg border font-mono text-xs transition-all ${
                 ev
-                  ? 'bg-panelLit text-accent border-accent/40 hover:bg-panel hover:border-accent cursor-pointer'
+                  ? 'bg-panelLit text-ink border-line hover:bg-panel hover:border-ink/40 cursor-pointer'
                   : 'bg-panelLit/40 text-inkDim/40 border-line cursor-not-allowed'
-              } ${isDone ? 'ring-1 ring-verified/40 text-verified' : ''}`}
+              } ${isDone ? 'ring-1 ring-verified/30 text-ink' : ''}`}
             >
-              {step.label} {isDone ? '✓' : ''}
+              {step.label} {isDone ? <span className="text-verified font-bold ml-0.5">✓</span> : ''}
             </button>
           );
         })}

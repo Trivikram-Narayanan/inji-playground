@@ -81,8 +81,8 @@ const Selector: React.FC<SelectorProps> = ({ onRunTest }) => {
 
   const OptionCard = ({ icon: Icon, title, ids, selected, onSelect }: any) => (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2 text-ink text-xs font-mono uppercase tracking-wider font-semibold">
-        <Icon size={16} className="text-accent" />
+      <div className="flex items-center gap-2 text-inkDim text-xs font-mono uppercase tracking-wider font-semibold">
+        <Icon size={16} className="text-inkDim" />
         {title}
       </div>
       <div className="flex flex-col gap-2">
@@ -95,12 +95,12 @@ const Selector: React.FC<SelectorProps> = ({ onRunTest }) => {
               onClick={() => onSelect(id)}
               className={`text-left px-4 py-3 rounded-xl border transition-all duration-200 cursor-pointer ${
                 isSelected
-                  ? 'bg-panelLit border-accent shadow-[0_0_15px_rgba(91,127,255,0.15)] ring-1 ring-accent'
-                  : 'bg-panelLit/50 border-line hover:border-line/80 hover:bg-panelLit'
+                  ? 'bg-panelLit border-line shadow-sm ring-1 ring-line'
+                  : 'bg-panelLit/40 border-line/60 hover:border-line hover:bg-panelLit'
               }`}
             >
-              <div className={`font-medium text-sm ${isSelected ? 'text-accent' : 'text-ink'}`}>{meta.label}</div>
-              {meta.desc && <div className="text-xs text-inkDim mt-0.5">{meta.desc}</div>}
+              <div className={`font-medium text-sm ${isSelected ? 'text-ink font-semibold' : 'text-inkDim'}`}>{meta.label}</div>
+              {meta.desc && <div className="text-xs text-inkDim/70 mt-0.5">{meta.desc}</div>}
             </button>
           );
         })}
@@ -141,8 +141,8 @@ const Selector: React.FC<SelectorProps> = ({ onRunTest }) => {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pt-6 border-t border-line">
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-4 w-full md:w-auto">
-            <div className="flex items-center gap-2 text-ink text-xs font-mono uppercase tracking-wider whitespace-nowrap">
-              <FileKey size={16} className="text-accent" />
+            <div className="flex items-center gap-2 text-inkDim text-xs font-mono uppercase tracking-wider whitespace-nowrap">
+              <FileKey size={16} className="text-inkDim" />
               Format:
             </div>
             <div className="flex flex-wrap gap-2">
@@ -156,8 +156,8 @@ const Selector: React.FC<SelectorProps> = ({ onRunTest }) => {
                     title={unavailableInReal ? 'No sandbox issuer offers this format in Real Mode - switch to Simulated Mode to use it' : undefined}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-medium font-mono transition-all duration-200 border cursor-pointer ${
                       isSelected
-                        ? 'bg-accent/20 border-accent text-accent shadow-sm'
-                        : 'bg-panelLit border-line text-inkDim hover:text-ink hover:bg-line'
+                        ? 'bg-panelLit border-ink/40 text-ink shadow-sm'
+                        : 'bg-panelLit/50 border-line text-inkDim hover:text-ink hover:bg-panelLit'
                     } ${unavailableInReal ? 'opacity-40' : ''}`}
                   >
                     {f.label}

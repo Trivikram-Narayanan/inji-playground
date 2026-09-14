@@ -80,12 +80,12 @@ const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
     <div className="flex flex-col gap-5 h-full">
       {/* Top View Selector: Step List vs Interactive Sequence Diagram */}
       <div className="flex items-center justify-between border-b border-line pb-3">
-        <div className="flex items-center gap-1 bg-panelLit p-1 rounded-xl border border-line text-xs">
+        <div className="flex items-center gap-1 bg-panelLit p-1 rounded-xl border border-line text-xs font-mono">
           <button
             onClick={() => setViewMode('list')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
               viewMode === 'list'
-                ? 'bg-panel text-accent border border-line shadow-sm'
+                ? 'bg-panel text-ink border border-line shadow-sm'
                 : 'text-inkDim hover:text-ink hover:bg-panel'
             }`}
           >
@@ -96,7 +96,7 @@ const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
             onClick={() => setViewMode('diagram')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
               viewMode === 'diagram'
-                ? 'bg-panel text-accent border border-line shadow-sm'
+                ? 'bg-panel text-ink border border-line shadow-sm'
                 : 'text-inkDim hover:text-ink hover:bg-panel'
             }`}
           >
@@ -106,7 +106,7 @@ const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
         </div>
 
         <span className="text-xs font-mono text-inkDim">
-          Transit: <span className="text-accent font-bold">{completedStepIds.length}</span>/6
+          Transit: <span className="text-ink font-bold">{completedStepIds.length}</span>/6
         </span>
       </div>
 
@@ -114,11 +114,11 @@ const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
       {flow.status === 'OFFER_CREATED' && flow.offer && flow.mode !== 'real' && (
         <div className="bg-panelLit/70 rounded-2xl p-5 flex flex-col items-center justify-center border border-line shadow-xl">
           {/* Mode Switcher: Cross-Device vs Same-Device */}
-          <div className="flex items-center gap-2 mb-4 bg-void p-1 rounded-xl border border-line text-xs">
+          <div className="flex items-center gap-2 mb-4 bg-void p-1 rounded-xl border border-line text-xs font-mono">
             <button
               onClick={() => setDeviceMode('cross-device')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
-                deviceMode === 'cross-device' ? 'bg-panelLit text-accent border border-line shadow-sm' : 'text-inkDim hover:text-ink'
+                deviceMode === 'cross-device' ? 'bg-panelLit text-ink border border-line shadow-sm' : 'text-inkDim hover:text-ink'
               }`}
             >
               <QrCode size={13} />
@@ -127,7 +127,7 @@ const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
             <button
               onClick={() => setDeviceMode('same-device')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
-                deviceMode === 'same-device' ? 'bg-panelLit text-accent border border-line shadow-sm' : 'text-inkDim hover:text-ink'
+                deviceMode === 'same-device' ? 'bg-panelLit text-ink border border-line shadow-sm' : 'text-inkDim hover:text-ink'
               }`}
             >
               <Smartphone size={13} />
@@ -148,7 +148,7 @@ const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
                 Same-device protocol redirect via custom app scheme and W3C Digital Credentials API:
               </p>
               <div className="bg-void p-2.5 rounded-xl border border-line flex items-center justify-between gap-2">
-                <code className="text-[11px] text-accent font-mono truncate">{deepLinkUri}</code>
+                <code className="text-[11px] text-ink font-mono truncate">{deepLinkUri}</code>
                 <button
                   onClick={handleCopyLink}
                   className="px-2.5 py-1 bg-panel hover:bg-line text-ink rounded-lg text-xs font-mono flex items-center gap-1 shrink-0 border border-line cursor-pointer"
@@ -164,7 +164,7 @@ const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
                     e.preventDefault();
                     onAdvanceFlow();
                   }}
-                  className="flex-1 text-center px-3 py-2 bg-panel hover:bg-panelLit text-accent rounded-xl border border-line text-xs font-medium cursor-pointer"
+                  className="flex-1 text-center px-3 py-2 bg-panel hover:bg-panelLit text-ink rounded-xl border border-line text-xs font-medium cursor-pointer"
                 >
                   Open in Inji App
                 </a>
