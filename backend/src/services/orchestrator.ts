@@ -6,7 +6,7 @@ import { issueByFormat } from '../formats';
 import { getFormat, type FormatId } from '../formats/registry';
 import { publish } from './eventBus';
 import { withTimeout, StepTimeoutError } from './timeout';
-import { classifySandboxError } from './errorCodes';
+import { triageFailure } from './failureTriage';
 import { sandboxConfig } from '../config';
 
 export type FlowConfig = {
@@ -127,11 +127,22 @@ export class Orchestrator {
       return { flowId, status: 'CREDENTIAL_ISSUED', mode: 'real' };
     } catch (err: any) {
       let errorCode = 'UNKNOWN_ERROR';
-      if (err instanceof UnsupportedFormatError) errorCode = err.code;
-      else if (err instanceof StepTimeoutError) errorCode = 'TIMEOUT';
-      else if (err instanceof SandboxError) errorCode = classifySandboxError(err.message);
-      await failFlow(db, flow, errorCode, err.message);
-      const error: any = new Error(`Real sandbox issuance failed: ${err.message}. ${errorCode === 'FORMAT_MISMATCH' ? '' : 'The MOSIP Collab sandbox may be temporarily unavailable - try Simulated Mode instead.'}`);
+      let errorDetail = err.message;
+      if (err instanceof UnsupportedFormatError) {
+        errorCode = err.code;
+      } else if (err instanceof StepTimeoutError) {
+        errorCode = 'TIMEOUT';
+      } else if (err instanceof SandboxError) {
+        // LLM triage (when ANTHROPIC_API_KEY is set) turns the raw captured payloads into
+        // a specific, actionable explanation instead of a bare error string; it always
+        // degrades to the same heuristic classifier used elsewhere when no key is set or
+        // the call fails, so this can never be the reason a result comes back wrong.
+        const triage = await triageFailure({ errorMessage: err.message, context: { format: formatId, partialEvents: err.partialEvents } });
+        errorCode = triage.errorCode;
+        errorDetail = triage.explanation;
+      }
+      await failFlow(db, flow, errorCode, errorDetail);
+      const error: any = new Error(`Real sandbox issuance failed: ${errorDetail}. ${errorCode === 'FORMAT_MISMATCH' ? '' : 'The MOSIP Collab sandbox may be temporarily unavailable - try Simulated Mode instead.'}`);
       error.flowId = flowId;
       error.errorCode = errorCode;
       throw error;

@@ -1,21 +1,73 @@
-version: '3.8'
+# One-command self-hosting for the playground itself (frontend + backend).
+#
+# This does NOT stand up Certify/Wallet/Verify - that stack is MOSIP's own (each has its
+# own docker-compose in the mosip/inji-certify, inji/mimoto, and inji/inji-verify repos).
+# Point Real Mode at your own deployment, or the public sandbox (the default), entirely
+# via env vars - see backend/.env.example for the full list of REAL_<FORMAT>_* overrides.
+#
+# Usage:
+#   cd infra
+#   cp .env.example .env   # edit if you're pointing at your own Certify/Verify instead of the sandbox
+#   docker compose up --build
 
 services:
-  db:
-    image: postgres:15
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
     environment:
-      POSTGRES_USER: inji
-      POSTGRES_PASSWORD: injipassword
-      POSTGRES_DB: playground
-    ports:
-      - "5432:5432"
+      PORT: 3000
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+      MIMOTO_BASE_URL: ${MIMOTO_BASE_URL:-}
+      SANDBOX_REDIRECT_URI: ${SANDBOX_REDIRECT_URI:-}
+      MOCK_UIN: ${MOCK_UIN:-}
+      MOCK_OTP: ${MOCK_OTP:-}
+      REAL_JSONLD_ISSUER_ID: ${REAL_JSONLD_ISSUER_ID:-}
+      REAL_JSONLD_CREDENTIAL_CONFIG_ID: ${REAL_JSONLD_CREDENTIAL_CONFIG_ID:-}
+      REAL_JSONLD_SCOPE: ${REAL_JSONLD_SCOPE:-}
+      REAL_JSONLD_KEY_TYPE: ${REAL_JSONLD_KEY_TYPE:-}
+      REAL_JSONLD_ESIGNET_HOST: ${REAL_JSONLD_ESIGNET_HOST:-}
+      REAL_JSONLD_ISSUER_HOST: ${REAL_JSONLD_ISSUER_HOST:-}
+      REAL_JSONLD_CLIENT_ID: ${REAL_JSONLD_CLIENT_ID:-}
+      REAL_JSONLD_ENABLED: ${REAL_JSONLD_ENABLED:-}
+      REAL_MDOC_ISSUER_ID: ${REAL_MDOC_ISSUER_ID:-}
+      REAL_MDOC_CREDENTIAL_CONFIG_ID: ${REAL_MDOC_CREDENTIAL_CONFIG_ID:-}
+      REAL_MDOC_SCOPE: ${REAL_MDOC_SCOPE:-}
+      REAL_MDOC_KEY_TYPE: ${REAL_MDOC_KEY_TYPE:-}
+      REAL_MDOC_ESIGNET_HOST: ${REAL_MDOC_ESIGNET_HOST:-}
+      REAL_MDOC_ISSUER_HOST: ${REAL_MDOC_ISSUER_HOST:-}
+      REAL_MDOC_CLIENT_ID: ${REAL_MDOC_CLIENT_ID:-}
+      REAL_MDOC_ENABLED: ${REAL_MDOC_ENABLED:-}
+      REAL_SDJWT_ISSUER_ID: ${REAL_SDJWT_ISSUER_ID:-}
+      REAL_SDJWT_CREDENTIAL_CONFIG_ID: ${REAL_SDJWT_CREDENTIAL_CONFIG_ID:-}
+      REAL_SDJWT_SCOPE: ${REAL_SDJWT_SCOPE:-}
+      REAL_SDJWT_KEY_TYPE: ${REAL_SDJWT_KEY_TYPE:-}
+      REAL_SDJWT_ESIGNET_HOST: ${REAL_SDJWT_ESIGNET_HOST:-}
+      REAL_SDJWT_ISSUER_HOST: ${REAL_SDJWT_ISSUER_HOST:-}
+      REAL_SDJWT_CLIENT_ID: ${REAL_SDJWT_CLIENT_ID:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      TRIAGE_MODEL: ${TRIAGE_MODEL:-}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - playground-db:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  redis:
-    image: redis:7
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE: ${VITE_API_BASE:-http://localhost:3000/api}
     ports:
-      - "6379:6379"
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
 
 volumes:
-  pgdata:
+  playground-db:

@@ -21,7 +21,7 @@ type ConfigOptions = {
   realMode: { mockUin: string };
 };
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:3000/api';
 
 const LABELS: Record<string, { label: string; desc?: string }> = {
   'inji-certify': { label: 'Inji Certify', desc: 'Default MOSIP issuer' },

@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Activity, CheckCircle, XCircle } from 'lucide-react';
 import type { InteropReport } from './ReportView';
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:3000/api';
 
 const Dashboard: React.FC = () => {
   const [reports, setReports] = useState<InteropReport[]>([]);

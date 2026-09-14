@@ -6,7 +6,7 @@ import ProtocolInspector from './ProtocolInspector';
 import ReportView, { type InteropReport } from './ReportView';
 import { useFlowStream } from '../hooks/useFlowStream';
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:3000/api';
 
 const MainFlow: React.FC = () => {
   const [flow, setFlow] = useState<FlowStatus | null>(null);

@@ -1,0 +1,561 @@
+<title>Playground QA Pass</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #f6f7f5;
+    --surface: #ffffff;
+    --surface-alt: #eef0ec;
+    --ink: #14171b;
+    --muted: #5b6167;
+    --rule: #d9dce0;
+    --rule-strong: #b9bec3;
+    --accent: #2f5d8a;
+    --accent-soft: #dfe9f2;
+    --ok: #2f7a4f;
+    --ok-soft: #e1f0e5;
+    --fail: #b0402a;
+    --fail-soft: #f6e2dd;
+    --warn: #a5751a;
+    --warn-soft: #f5ead2;
+    --shadow: 0 1px 3px rgba(20,23,27,0.08);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171a;
+      --surface: #1b1f23;
+      --surface-alt: #21262b;
+      --ink: #e7e9ea;
+      --muted: #9aa1a6;
+      --rule: #2c3136;
+      --rule-strong: #3c434a;
+      --accent: #6fa8d8;
+      --accent-soft: #1e2f3f;
+      --ok: #7fc99a;
+      --ok-soft: #1c2f22;
+      --fail: #e08a72;
+      --fail-soft: #33221d;
+      --warn: #e0b563;
+      --warn-soft: #332a17;
+      --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171a; --surface: #1b1f23; --surface-alt: #21262b; --ink: #e7e9ea;
+    --muted: #9aa1a6; --rule: #2c3136; --rule-strong: #3c434a; --accent: #6fa8d8;
+    --accent-soft: #1e2f3f; --ok: #7fc99a; --ok-soft: #1c2f22; --fail: #e08a72;
+    --fail-soft: #33221d; --warn: #e0b563; --warn-soft: #332a17;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-size: 15.5px;
+    line-height: 1.6;
+    padding-inline: 18px;
+    padding-block: 0 90px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+
+  .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+
+  /* Sticky progress header */
+  .progress-bar {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--bg);
+    padding-block: 14px 10px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 8px;
+  }
+  .progress-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .progress-label { font-size: 13px; color: var(--muted); }
+  .progress-label b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .progress-track {
+    flex: 1; min-width: 120px; height: 6px; background: var(--surface-alt);
+    border-radius: 4px; overflow: hidden;
+  }
+  .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width .25s ease; }
+  .reset-btn {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: none;
+    border: 1px solid var(--rule-strong); color: var(--muted); padding: 5px 10px;
+    border-radius: 4px; cursor: pointer;
+  }
+  .reset-btn:hover { border-color: var(--fail); color: var(--fail); }
+
+  header.masthead { padding: 26px 0 20px; }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+  }
+  h1 { font-size: 1.7rem; font-weight: 700; text-wrap: balance; margin: 0 0 10px; }
+  .lede { color: var(--muted); max-width: 62ch; }
+
+  nav.toc {
+    display: flex; flex-wrap: wrap; gap: 6px 10px; margin: 22px 0 8px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12.5px;
+  }
+  nav.toc a { color: var(--accent); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+  nav.toc span.sep { color: var(--rule-strong); }
+
+  section.sec { margin: 44px 0; scroll-margin-top: 90px; }
+  .sec-head {
+    display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px;
+    border-bottom: 1px solid var(--rule); padding-bottom: 10px;
+  }
+  .sec-num { font-family: 'IBM Plex Mono', monospace; color: var(--accent); font-weight: 600; font-size: 0.95rem; }
+  h2 { font-size: 1.2rem; font-weight: 700; margin: 0; }
+  .sec-note { color: var(--muted); font-size: 14px; margin: 10px 0 18px; max-width: 68ch; }
+
+  .callout {
+    padding: 12px 16px; border-radius: 5px; font-size: 14px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left: 3px solid var(--warn); }
+  .callout.info { background: var(--accent-soft); border-left: 3px solid var(--accent); }
+
+  pre {
+    background: var(--surface-alt); border: 1px solid var(--rule); border-radius: 6px;
+    padding: 12px 14px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+  }
+  code.inline {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.85em; background: var(--surface-alt);
+    padding: 0.05em 0.35em; border-radius: 3px;
+  }
+
+  /* Checklist items */
+  ul.checklist { list-style: none; padding: 0; margin: 0; }
+  .item {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 12px 14px; background: var(--surface); border: 1px solid var(--rule);
+    border-radius: 6px; margin-bottom: 8px; box-shadow: var(--shadow);
+  }
+  .item input[type="checkbox"] {
+    margin-top: 3px; width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0;
+  }
+  .item-body { flex: 1; min-width: 0; }
+  .item-title { font-weight: 600; font-size: 14.5px; }
+  .item-detail { color: var(--muted); font-size: 13.5px; margin-top: 3px; }
+  .item.checked { opacity: 0.62; }
+  .item.checked .item-title { text-decoration: line-through; text-decoration-color: var(--rule-strong); }
+  .item-notes {
+    width: 100%; margin-top: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px;
+    background: var(--surface-alt); border: 1px solid var(--rule); border-radius: 4px;
+    padding: 6px 8px; color: var(--ink); resize: vertical; min-height: 30px;
+  }
+  .item-notes::placeholder { color: var(--muted); }
+
+  /* Matrix tables */
+  .tbl-wrap { overflow-x: auto; margin: 14px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.8px; }
+  thead th {
+    text-align: left; padding: 9px 10px; border-top: 1.5px solid var(--rule-strong);
+    border-bottom: 1px solid var(--rule-strong); font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
+  }
+  tbody td { padding: 9px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: 1.5px solid var(--rule-strong); }
+  td.chk { width: 34px; }
+  td input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; }
+  .pill {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 2px 7px; border-radius: 20px;
+    display: inline-block; white-space: nowrap;
+  }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); }
+  .pill.fail { background: var(--fail-soft); color: var(--fail); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  input.result-note {
+    width: 100%; font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    background: var(--surface-alt); border: 1px solid var(--rule); border-radius: 4px;
+    padding: 4px 6px; color: var(--ink);
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .bug-template {
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 6px;
+    padding: 16px 18px; box-shadow: var(--shadow);
+  }
+  .bug-template label { display: block; font-size: 12px; font-family: 'IBM Plex Mono', monospace; color: var(--muted); margin: 12px 0 4px; }
+  .bug-template label:first-child { margin-top: 0; }
+  .bug-template input, .bug-template textarea {
+    width: 100%; font-family: 'IBM Plex Sans', sans-serif; font-size: 14px;
+    background: var(--surface-alt); border: 1px solid var(--rule); border-radius: 4px;
+    padding: 7px 9px; color: var(--ink);
+  }
+  .bug-template textarea { min-height: 70px; resize: vertical; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; }
+
+  footer.colophon {
+    margin-top: 60px; padding-top: 18px; border-top: 1px solid var(--rule);
+    font-size: 12.5px; color: var(--muted);
+  }
+
+  @media (max-width: 520px) {
+    h1 { font-size: 1.4rem; }
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="wrap">
+
+  <div class="progress-bar">
+    <div class="progress-row">
+      <div class="progress-label">Progress: <b id="progress-count">0 / 0</b> checks complete</div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <button class="reset-btn" id="reset-btn">Reset my progress</button>
+    </div>
+  </div>
+
+  <header class="masthead">
+    <div class="eyebrow">QA Pass · Inji Interoperability Playground</div>
+    <h1>Manual + API Test Plan</h1>
+    <p class="lede">A hands-on pass through the actual running app — Simulated Mode, Real Mode, tamper mode, all three credential formats, the API surface, and the automated suite. Checkboxes and notes save to your browser automatically as you go (nothing is sent anywhere).</p>
+  </header>
+
+  <nav class="toc">
+    <a href="#setup">1. Setup</a><span class="sep">/</span>
+    <a href="#smoke">2. Smoke test</a><span class="sep">/</span>
+    <a href="#features">3. Feature checklist</a><span class="sep">/</span>
+    <a href="#sim-matrix">4. Simulated Mode matrix</a><span class="sep">/</span>
+    <a href="#real-matrix">5. Real Mode matrix</a><span class="sep">/</span>
+    <a href="#api">6. API spot-checks</a><span class="sep">/</span>
+    <a href="#automated">7. Automated suite</a><span class="sep">/</span>
+    <a href="#known-issues">8. Known issues</a><span class="sep">/</span>
+    <a href="#bug-report">9. Filing a bug</a>
+  </nav>
+
+  <section class="sec" id="setup">
+    <div class="sec-head"><span class="sec-num">01</span><h2>Setup</h2></div>
+    <p class="sec-note">Two servers, run separately. Node v18+.</p>
+    <div class="grid-2">
+      <pre>cd backend
+npm install
+npm run dev
+# → http://localhost:3000</pre>
+      <pre>cd frontend
+npm install
+npm run dev
+# → http://localhost:5173</pre>
+    </div>
+    <ul class="checklist" id="list-setup">
+      <li class="item" data-id="setup-backend">
+        <input type="checkbox"><div class="item-body">
+          <div class="item-title">Backend starts cleanly, no errors in terminal</div>
+          <div class="item-detail"><code class="inline">curl http://localhost:3000/health</code> returns <code class="inline">{"status":"ok"}</code></div>
+          <textarea class="item-notes" placeholder="Notes…"></textarea>
+        </div>
+      </li>
+      <li class="item" data-id="setup-frontend">
+        <input type="checkbox"><div class="item-body">
+          <div class="item-title">Frontend loads at localhost:5173</div>
+          <div class="item-detail">Selector, empty timeline placeholder, and top nav (New Test / Dashboard) all render</div>
+          <textarea class="item-notes" placeholder="Notes…"></textarea>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <section class="sec" id="smoke">
+    <div class="sec-head"><span class="sec-num">02</span><h2>5-minute smoke test</h2></div>
+    <p class="sec-note">Do this first. If any of these fail, stop and file a bug before doing the full matrix below — no point running 20 more cases against a broken build.</p>
+    <ul class="checklist" id="list-smoke">
+      <li class="item" data-id="smoke-run">
+        <input type="checkbox"><div class="item-body">
+          <div class="item-title">Run a default Simulated-Mode test</div>
+          <div class="item-detail">Leave everything at default (Inji Certify / Inji Wallet Mobile / Inji Verify / W3C VC JSON-LD, Real Mode off, Tamper off) → click <b>Run Test</b> → QR code appears</div>
+          <textarea class="item-notes" placeholder="Notes…"></textarea>
+        </div>
+      </li>
+      <li class="item" data-id="smoke-advance">
+        <input type="checkbox"><div class="item-body">
+          <div class="item-title">Click "Simulate Full Flow" — all 6 timeline steps complete</div>
+          <div class="item-detail">credential_offer → token_exchange → credential_issued → authorization_request → presentation → verification_result, each turns green in order</div>
+          <textarea class="item-notes" placeholder="Notes…"></textarea>
+        </div>
+      </li>
+      <li class="item" data-id="smoke-result">
+        <input type="checkbox"><div class="item-body">
+          <div class="item-title">Green "✅ Verification Valid" banner appears</div>
+          <textarea class="item-notes" placeholder="Notes…"></textarea>
+        </div>
+      </li>
+      <li class="item" data-id="smoke-inspector">
+        <input type="checkbox"><div class="item-body">
+          <div class="item-title">Click a timeline step — raw JSON payload shows in Protocol Inspector</div>
+          <textarea class="item-notes" placeholder="Notes…"></textarea>
+        </div>
+      </li>
+      <li class="item" data-id="smoke-report">
+        <input type="checkbox"><div class="item-body">
+          <div class="item-title">Click "View Full Report" — modal shows outcome, duration, and JSON export works</div>
+          <textarea class="item-notes" placeholder="Notes…"></textarea>
+        </div>
+      </li>
+      <li class="item" data-id="smoke-dashboard">
+        <input type="checkbox"><div class="item-body">
+          <div class="item-title">Dashboard shows this run in the history with correct stats</div>
+          <textarea class="item-notes" placeholder="Notes…"></textarea>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <section class="sec" id="features">
+    <div class="sec-head"><span class="sec-num">03</span><h2>Feature checklist</h2></div>
+    <p class="sec-note">Broader pass through individual UI behaviors, once the smoke test passes.</p>
+    <ul class="checklist" id="list-features">
+      <li class="item" data-id="feat-realmode-toggle">
+        <input type="checkbox"><div class="item-body">
+          <div class="item-title">Real Mode toggle changes the mock-UIN hint text and disables/greys unsupported formats</div>
+          <div class="item-detail">Flip Real Mode on — SD-JWT VC format button should show a "sim only" tag and look disabled</div>
+          <textarea class="item-notes" placeholder="Notes…"></textarea>
+        </div>
+      </li>
+      <li class="item" data-id="feat-live-badge">
+        <input type="checkbox"><div class="item-body">
+          <div class="item-title">Real Mode run shows a red "LIVE" badge next to "Live Timeline"</div>
+          <textarea class="item-notes" placeholder="Notes…"></textarea>
+        </div>
+      </li>
+      <li class="item" data-id="feat-sse">
+        <input type="checkbox"><div class="item-body">
+          <div class="item-title">Timeline updates live without you refreshing or clicking anything extra</div>
+          <div class="item-detail">Open browser DevTools → Network tab, filter "stream" — you should see an <code class="inline">EventSource</code> connection open per run, not repeated polling requests</div>
+          <textarea class="item-notes" placeholder="Notes…"></textarea>
+        </div>
+      </li>
+      <li class="item" data-id="feat-failed-banner">
+        <input type="checkbox"><div class="item-body">
+          <div class="item-title">A FAILED run (e.g. Real Mode hitting the known sandbox bug, see §8) shows the red "Sandbox Call Failed" banner, not a silent stall</div>
+          <textarea class="item-notes" placeholder="Notes…"></textarea>
+        </div>
+      </li>
+      <li class="item" data-id="feat-start-error">
+        <input type="checkbox"><div class="item-body">
+          <div class="item-title">A failed start shows a dismissible red error banner above the timeline</div>
+          <textarea class="item-notes" placeholder="Notes…"></textarea>
+        </div>
+      </li>
+      <li class="item" data-id="feat-dashboard-stats">
+        <input type="checkbox"><div class="item-body">
+          <div class="item-title">Dashboard stat cards (total / passed / failed / pass rate / most common error) match what you'd hand-count from the history table</div>
+          <textarea class="item-notes" placeholder="Notes…"></textarea>
+        </div>
+      </li>
+      <li class="item" data-id="feat-responsive">
+        <input type="checkbox"><div class="item-body">
+          <div class="item-title">Narrow the browser window to phone width (~400px) — layout stacks cleanly, nothing overlaps or clips</div>
+          <textarea class="item-notes" placeholder="Notes…"></textarea>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <section class="sec" id="sim-matrix">
+    <div class="sec-head"><span class="sec-num">04</span><h2>Simulated Mode: format × tamper matrix</h2></div>
+    <p class="sec-note">These 12 cases should always pass, deterministically, with no external dependency. This is the core regression matrix — run it after any backend change. Expected outcome and error code are shown; check the box if the app matched them, and jot the actual result if it didn't.</p>
+    <div class="tbl-wrap">
+      <table id="tbl-sim">
+        <thead>
+          <tr><th class="chk"></th><th>Format</th><th>Tamper</th><th>Expected result</th><th>Expected error code</th><th>Actual (if different)</th></tr>
+        </thead>
+        <tbody>
+          <tr data-id="sim-jsonld-none"><td class="chk"><input type="checkbox"></td><td>W3C VC (JSON-LD)</td><td>off</td><td><span class="pill ok">valid</span></td><td>—</td><td><input class="result-note" placeholder=""></td></tr>
+          <tr data-id="sim-jsonld-badsig"><td class="chk"><input type="checkbox"></td><td>W3C VC (JSON-LD)</td><td>bad-signature</td><td><span class="pill fail">invalid</span></td><td class="mono">SIGNATURE_INVALID</td><td><input class="result-note" placeholder=""></td></tr>
+          <tr data-id="sim-jsonld-claim"><td class="chk"><input type="checkbox"></td><td>W3C VC (JSON-LD)</td><td>claim-corruption</td><td><span class="pill fail">invalid</span></td><td class="mono">SIGNATURE_INVALID <span class="pill warn" title="JSON-LD signs the whole document, so this collapses into the same code as bad-signature — that's expected, not a bug">expected*</span></td><td><input class="result-note" placeholder=""></td></tr>
+          <tr data-id="sim-jsonld-expired"><td class="chk"><input type="checkbox"></td><td>W3C VC (JSON-LD)</td><td>expired</td><td><span class="pill warn">valid-but-expired</span></td><td class="mono">CREDENTIAL_EXPIRED</td><td><input class="result-note" placeholder=""></td></tr>
+
+          <tr data-id="sim-sdjwt-none"><td class="chk"><input type="checkbox"></td><td>SD-JWT VC</td><td>off</td><td><span class="pill ok">valid</span></td><td>—</td><td><input class="result-note" placeholder=""></td></tr>
+          <tr data-id="sim-sdjwt-badsig"><td class="chk"><input type="checkbox"></td><td>SD-JWT VC</td><td>bad-signature</td><td><span class="pill fail">invalid</span></td><td class="mono">SIGNATURE_INVALID</td><td><input class="result-note" placeholder=""></td></tr>
+          <tr data-id="sim-sdjwt-claim"><td class="chk"><input type="checkbox"></td><td>SD-JWT VC</td><td>claim-corruption</td><td><span class="pill fail">invalid</span></td><td class="mono">CLAIM_MISMATCH</td><td><input class="result-note" placeholder=""></td></tr>
+          <tr data-id="sim-sdjwt-expired"><td class="chk"><input type="checkbox"></td><td>SD-JWT VC</td><td>expired</td><td><span class="pill warn">valid-but-expired</span></td><td class="mono">CREDENTIAL_EXPIRED</td><td><input class="result-note" placeholder=""></td></tr>
+
+          <tr data-id="sim-mdoc-none"><td class="chk"><input type="checkbox"></td><td>mDoc / mDL</td><td>off</td><td><span class="pill ok">valid</span></td><td>—</td><td><input class="result-note" placeholder=""></td></tr>
+          <tr data-id="sim-mdoc-badsig"><td class="chk"><input type="checkbox"></td><td>mDoc / mDL</td><td>bad-signature</td><td><span class="pill fail">invalid</span></td><td class="mono">SIGNATURE_INVALID</td><td><input class="result-note" placeholder=""></td></tr>
+          <tr data-id="sim-mdoc-claim"><td class="chk"><input type="checkbox"></td><td>mDoc / mDL</td><td>claim-corruption</td><td><span class="pill fail">invalid</span></td><td class="mono">CLAIM_MISMATCH</td><td><input class="result-note" placeholder=""></td></tr>
+          <tr data-id="sim-mdoc-expired"><td class="chk"><input type="checkbox"></td><td>mDoc / mDL</td><td>expired</td><td><span class="pill warn">valid-but-expired</span></td><td class="mono">CREDENTIAL_EXPIRED</td><td><input class="result-note" placeholder=""></td></tr>
+
+          <tr data-id="sim-crossecosystem"><td class="chk"><input type="checkbox"></td><td>Issuer=external-mock, Wallet=Inji Wallet Mobile, Format=W3C VC</td><td>off</td><td><span class="pill fail">invalid</span></td><td class="mono">DID_METHOD_GAP</td><td><input class="result-note" placeholder=""></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sec-note" style="margin-top:10px;">* For claim-corruption on JSON-LD, seeing <code class="inline">SIGNATURE_INVALID</code> instead of a claim-specific code is <b>correct</b> — JSON-LD signs the whole document as one unit, so it can't tell "wrong claim" from "wrong signature" apart. SD-JWT and mdoc <i>can</i> tell them apart (that's the interesting bit) — if either of those two shows <code class="inline">SIGNATURE_INVALID</code> for claim-corruption instead of <code class="inline">CLAIM_MISMATCH</code>, that's a real regression.</p>
+  </section>
+
+  <section class="sec" id="real-matrix">
+    <div class="sec-head"><span class="sec-num">05</span><h2>Real Mode matrix</h2></div>
+    <p class="sec-note">Against the live MOSIP Collab sandbox — a third party's infrastructure we don't control. Read §8 first so you don't chase a known issue.</p>
+    <div class="tbl-wrap">
+      <table id="tbl-real">
+        <thead>
+          <tr><th class="chk"></th><th>Format</th><th>Expected behavior</th><th>Actual (if different)</th></tr>
+        </thead>
+        <tbody>
+          <tr data-id="real-jsonld"><td class="chk"><input type="checkbox"></td><td>W3C VC (JSON-LD)</td><td>Real oauth-details call succeeds; currently fails at send-otp with a clean FAILED state + visible error in inspector (known sandbox bug, §8) — <b>not</b> a silent hang or crash</td><td><input class="result-note" placeholder=""></td></tr>
+          <tr data-id="real-mdoc"><td class="chk"><input type="checkbox"></td><td>mDoc / mDL</td><td>Same as above — clean failure, not a crash</td><td><input class="result-note" placeholder=""></td></tr>
+          <tr data-id="real-sdjwt-reject"><td class="chk"><input type="checkbox"></td><td>SD-JWT VC</td><td>Rejected <b>immediately</b>, no network call made — <code class="inline">FORMAT_MISMATCH</code>, because no sandbox issuer offers this format. This one should be a clean, fast, deterministic pass.</td><td><input class="result-note" placeholder=""></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="api">
+    <div class="sec-head"><span class="sec-num">06</span><h2>API spot-checks</h2></div>
+    <p class="sec-note">Useful to isolate whether an issue is frontend or backend. Backend must be running on port 3000.</p>
+    <pre># Config options (drives the Selector)
+curl http://localhost:3000/api/config/options
+
+# Start a run
+curl -X POST http://localhost:3000/api/flows -H "Content-Type: application/json" \
+  -d '{"issuer":"inji-certify","wallet":"inji-wallet-mobile","verifier":"inji-verify","format":"sd-jwt-vc"}'
+
+# Advance it (swap in the flowId from above)
+curl -X POST http://localhost:3000/api/flows/&lt;flowId&gt;/advance
+
+# Watch the live event stream (leave running, advance the same flow in another terminal)
+curl -N http://localhost:3000/api/flows/&lt;flowId&gt;/events/stream
+
+# Report exports
+curl "http://localhost:3000/api/reports/export?format=json"
+curl "http://localhost:3000/api/reports/export?format=markdown"</pre>
+    <ul class="checklist" id="list-api">
+      <li class="item" data-id="api-options"><input type="checkbox"><div class="item-body"><div class="item-title"><code class="inline">GET /api/config/options</code> lists 3 formats, sd-jwt-vc has <code class="inline">realModeSupported: false</code></div><textarea class="item-notes" placeholder="Notes…"></textarea></div></li>
+      <li class="item" data-id="api-start"><input type="checkbox"><div class="item-body"><div class="item-title"><code class="inline">POST /api/flows</code> returns 201 with a <code class="inline">flowId</code> and <code class="inline">status: OFFER_CREATED</code></div><textarea class="item-notes" placeholder="Notes…"></textarea></div></li>
+      <li class="item" data-id="api-stream"><input type="checkbox"><div class="item-body"><div class="item-title">SSE stream prints <code class="inline">event</code> and <code class="inline">status</code> lines as you advance the flow in another terminal</div><textarea class="item-notes" placeholder="Notes…"></textarea></div></li>
+      <li class="item" data-id="api-export-md"><input type="checkbox"><div class="item-body"><div class="item-title">Markdown export returns a real table, not an error</div><textarea class="item-notes" placeholder="Notes…"></textarea></div></li>
+    </ul>
+  </section>
+
+  <section class="sec" id="automated">
+    <div class="sec-head"><span class="sec-num">07</span><h2>Automated suite</h2></div>
+    <p class="sec-note">Run this before and after any change — it covers the format round-trips (issue → verify → tamper) and one full API integration flow, so most of §4 above is already asserted here. Manual testing is for what the suite can't see: the UI itself, and the live sandbox.</p>
+    <pre>cd backend
+npm test</pre>
+    <ul class="checklist" id="list-automated">
+      <li class="item" data-id="auto-pass"><input type="checkbox"><div class="item-body"><div class="item-title">All 23 tests pass, 0 failures</div><div class="item-detail">If this number has changed, someone added or removed a test — not necessarily a problem, just note it</div><textarea class="item-notes" placeholder="Notes…"></textarea></div></li>
+    </ul>
+  </section>
+
+  <section class="sec" id="known-issues">
+    <div class="sec-head"><span class="sec-num">08</span><h2>Known issues — don't re-file these</h2></div>
+    <div class="callout warn">
+      <b>MOSIP sandbox transaction bug.</b> Real Mode issuance for <code class="inline">w3c-vc-jsonld</code> and <code class="inline">mdoc</code> fails at the <code class="inline">send-otp</code> step with <code class="inline">invalid_transaction</code>, 100% reproducibly. This is on MOSIP's side (confirmed across two independent eSignet deployments) — the app's job here is just to fail cleanly, not to succeed. If you see anything <i>other</i> than a clean FAILED state with a readable error in the Protocol Inspector, that's a real bug worth filing.
+    </div>
+    <div class="callout warn">
+      <b>No local Docker stack.</b> There's no way to run Certify/Wallet/Verify locally on this machine — Real Mode only ever talks to the public MOSIP Collab sandbox. Don't file "can't run offline" as a bug; it's a known scope boundary.
+    </div>
+  </section>
+
+  <section class="sec" id="bug-report">
+    <div class="sec-head"><span class="sec-num">09</span><h2>Filing a bug</h2></div>
+    <p class="sec-note">For anything in §3–§7 that doesn't match. Fill this in, then paste it into wherever the team tracks issues — this form doesn't submit anywhere itself.</p>
+    <div class="bug-template">
+      <label for="bug-title">Title</label>
+      <input id="bug-title" type="text" placeholder="e.g. claim-corruption on mdoc reports SIGNATURE_INVALID instead of CLAIM_MISMATCH">
+      <label for="bug-steps">Steps to reproduce</label>
+      <textarea id="bug-steps" placeholder="1. Set format to mdoc, tamper mode on, type claim-corruption&#10;2. Run Test → Advance&#10;3. …"></textarea>
+      <label for="bug-expected">Expected</label>
+      <textarea id="bug-expected" placeholder="From the matrix in §4/§5…"></textarea>
+      <label for="bug-actual">Actual</label>
+      <textarea id="bug-actual" placeholder="What actually happened — paste the Protocol Inspector payload if relevant"></textarea>
+      <label for="bug-env">Environment</label>
+      <input id="bug-env" type="text" placeholder="Browser, OS, mode (Simulated/Real), flowId if you have it">
+    </div>
+  </section>
+
+  <footer class="colophon">
+    <p>Checkbox and note state lives in this browser's local storage only (key: <code class="inline">inji-qa-progress</code>) — it won't sync across devices or reach anyone else. Re-running <code class="inline">npm test</code> after code changes is the fastest way to catch regressions before a manual pass.</p>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  const STORAGE_KEY = 'inji-qa-progress';
+  let state = {};
+  try { state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch (e) { state = {}; }
+
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* ignore quota/private-mode errors */ }
+  }
+
+  function allCheckable() {
+    return Array.from(document.querySelectorAll('[data-id] > input[type="checkbox"], [data-id] td.chk input[type="checkbox"]'));
+  }
+
+  function updateProgress() {
+    const boxes = allCheckable();
+    const total = boxes.length;
+    const done = boxes.filter(b => b.checked).length;
+    document.getElementById('progress-count').textContent = done + ' / ' + total;
+    document.getElementById('progress-fill').style.width = (total ? (done / total * 100) : 0) + '%';
+  }
+
+  function wireItem(el) {
+    const id = el.getAttribute('data-id');
+    if (!id) return;
+    const checkbox = el.querySelector('input[type="checkbox"]');
+    const noteField = el.querySelector('.item-notes, .result-note');
+
+    const saved = state[id] || {};
+    if (checkbox && saved.checked) {
+      checkbox.checked = true;
+      el.classList.add('checked');
+    }
+    if (noteField && saved.note) noteField.value = saved.note;
+
+    if (checkbox) {
+      checkbox.addEventListener('change', function () {
+        state[id] = state[id] || {};
+        state[id].checked = checkbox.checked;
+        el.classList.toggle('checked', checkbox.checked);
+        save();
+        updateProgress();
+      });
+    }
+    if (noteField) {
+      noteField.addEventListener('input', function () {
+        state[id] = state[id] || {};
+        state[id].note = noteField.value;
+        save();
+      });
+    }
+  }
+
+  document.querySelectorAll('.item[data-id]').forEach(wireItem);
+  document.querySelectorAll('tr[data-id]').forEach(wireItem);
+
+  // Bug report fields persist too
+  ['bug-title', 'bug-steps', 'bug-expected', 'bug-actual', 'bug-env'].forEach(function (id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (state['__' + id]) el.value = state['__' + id];
+    el.addEventListener('input', function () {
+      state['__' + id] = el.value;
+      save();
+    });
+  });
+
+  document.getElementById('reset-btn').addEventListener('click', function () {
+    if (!confirm('Clear all checkboxes and notes on this device?')) return;
+    state = {};
+    save();
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+    document.querySelectorAll('.item').forEach(el => el.classList.remove('checked'));
+    document.querySelectorAll('.item-notes, .result-note').forEach(el => { el.value = ''; });
+    ['bug-title', 'bug-steps', 'bug-expected', 'bug-actual', 'bug-env'].forEach(function (id) {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    updateProgress();
+  });
+
+  updateProgress();
+})();
+</script>
