@@ -126,6 +126,9 @@ Full specification suite lives in [`files/`](files/):
 | [`09_Test_Plan.md`](files/09_Test_Plan.md) | Test matrix & cases |
 | [`10_Report_Templates.md`](files/10_Report_Templates.md) | Report & gap write-up formats |
 | [`12_Enhancements_And_Extensions.md`](files/12_Enhancements_And_Extensions.md) | Mermaid diagrams, same-device flow, Docker, and CI matrix |
+| [`13_Recent_Pull_Changelog_And_Architecture_Updates.md`](13_Recent_Pull_Changelog_And_Architecture_Updates.md) | Recent pull changelog & architecture updates |
+| [`14_Award_Level_Creative_Direction.md`](14_Award_Level_Creative_Direction.md) | Creative direction, motion design, and 3D stack spec |
+| [`15_Real_World_Cinematic_Trust_Inspirations.md`](15_Real_World_Cinematic_Trust_Inspirations.md) | Case studies, studio benchmarks (Worldcoin, Jeton, Audemars Piguet), and real-world citations |
 | [`Inji_Interoperability_Playground_Spec.md`](Inji_Interoperability_Playground_Spec.md) | Phased build plan |
 
 **Known gap**: a full local Docker Compose stack for Certify/Wallet/Verify (`08_Environment_Setup_Guide.md` Option A) is out of scope on this machine (no Docker, 8GB RAM) — Real Mode uses the MOSIP Collab sandbox (Option B) instead.
