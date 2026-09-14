@@ -3,7 +3,8 @@ import { Ed25519Signature2020 } from '@digitalbazaar/ed25519-signature-2020';
 import { Ed25519VerificationKey2020 } from '@digitalbazaar/ed25519-verification-key-2020';
 // @ts-ignore - no published types
 import jsonld from 'jsonld';
-import { resolveDidUrl } from '../services/didKey';
+import { resolveDidUrl, didJwkFromEd25519KeyPair } from '../services/didKey';
+import type { DidMethod } from '../ecosystems/registry';
 
 const nodeLoader = jsonld.documentLoaders.node();
 
@@ -19,14 +20,22 @@ export type LdpVcIssueResult = { credential: any };
 
 /**
  * Issues a real, signed W3C Verifiable Credential (Ed25519Signature2020, self-certifying
- * did:key - no CA/registry needed) - used by Simulated Mode to "play issuer" with a real
+ * DID - no CA/registry needed) - used by Simulated Mode to "play issuer" with a real
  * signature instead of a fabricated string, verifiable by the same code path Real Mode uses.
+ *
+ * `didMethod` lets a caller issue as a specific ecosystem (see `ecosystems/registry.ts`):
+ * MOSIP/Inji issuers use did:key here, while the generic/non-MOSIP reference ecosystem uses
+ * did:jwk, so two ecosystems produce genuinely different issuer identities rather than both
+ * running through the same code path under different labels.
  */
-export async function issue(claims: Record<string, unknown>, expirationDate?: string): Promise<LdpVcIssueResult> {
+export async function issue(claims: Record<string, unknown>, expirationDate?: string, didMethod: DidMethod = 'did:key'): Promise<LdpVcIssueResult> {
   const keyPair = await Ed25519VerificationKey2020.generate({});
-  const did = `did:key:${keyPair.fingerprint()}`;
+  const did = didMethod === 'did:jwk' ? didJwkFromEd25519KeyPair(keyPair) : `did:key:${keyPair.fingerprint()}`;
   keyPair.controller = did;
-  keyPair.id = `${did}#${keyPair.fingerprint()}`;
+  // Must match the verification-method id `resolveDidJwk`/`resolveDidKey` (services/didKey.ts)
+  // construct when resolving this DID back during verification, or the proof's
+  // verificationMethod reference won't line up with the resolved key document.
+  keyPair.id = didMethod === 'did:jwk' ? `${did}#0` : `${did}#${keyPair.fingerprint()}`;
 
   const unsigned = {
     '@context': ['https://www.w3.org/ns/credentials/v2', { '@vocab': 'https://playground.example/vocab#' }],

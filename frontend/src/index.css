@@ -5,3 +5,24 @@
     @apply bg-slate-900 text-slate-50 antialiased;
   }
 }
+
+@keyframes slide-in-fade {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in-fade {
+  animation: slide-in-fade 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-in-fade {
+    animation: none;
+  }
+}
