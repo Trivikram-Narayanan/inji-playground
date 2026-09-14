@@ -1,6 +1,7 @@
 import React from 'react';
-import { Download, FileText, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
-import MagneticButton from './MagneticButton';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Download } from 'lucide-react';
+import VerdictSeal from './VerdictSeal';
 
 export interface InteropReport {
   flow_id: string;
@@ -23,131 +24,116 @@ interface ReportViewProps {
 
 const ReportView: React.FC<ReportViewProps> = ({ report, onClose }) => {
   const isPass = report.outcome === 'pass';
+  const isExpired = report.error_code === 'CREDENTIAL_EXPIRED';
+
+  const verdict = isPass ? 'verified' : isExpired ? 'expired' : 'rejected';
 
   const downloadJson = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(report, null, 2));
-    const dlAnchorElem = document.createElement('a');
-    dlAnchorElem.setAttribute("href", dataStr);
-    dlAnchorElem.setAttribute("download", `report-${report.flow_id.slice(0,8)}.json`);
-    dlAnchorElem.click();
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(report, null, 2));
+    const el = document.createElement('a');
+    el.setAttribute('href', dataStr);
+    el.setAttribute('download', `report-${report.flow_id.slice(0, 8)}.json`);
+    el.click();
   };
 
-  const verdictLabel = isPass
-    ? 'VERIFIED'
-    : report.error_code === 'CREDENTIAL_EXPIRED'
-    ? 'EXPIRED'
-    : 'REJECTED';
-
-  const verdictSubline = isPass
-    ? 'Cryptographic integrity and claim signatures confirmed across modules.'
-    : report.error_code === 'CREDENTIAL_EXPIRED'
-    ? 'Cryptographic signatures verified, but validity period has elapsed.'
-    : 'This credential did not survive cross-module boundary verification.';
-
   return (
-    <div className="fixed inset-0 bg-void/85 backdrop-blur-md z-50 flex items-center justify-center p-6 animate-in fade-in duration-200">
-      <div className="bg-panel border border-line shadow-2xl rounded-2xl w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden">
-        <div className="px-6 py-4 border-b border-line flex justify-between items-center bg-panelLit">
-          <div className="flex items-center gap-3">
-            <FileText className="text-inkDim" size={20} />
-            <h2 className="text-lg font-display font-semibold text-ink tracking-tight">Interoperability Case Dossier</h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-inkDim hover:text-ink text-2xl leading-none transition-colors cursor-pointer"
-          >
-            &times;
-          </button>
-        </div>
-
-        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 flex flex-col gap-6">
-          {/* Signature Verdict Banner */}
-          <div
-            className={`p-6 rounded-xl flex items-center gap-5 border transition-all ${
-              isPass
-                ? 'bg-verified/10 border-verified/30'
-                : report.error_code === 'CREDENTIAL_EXPIRED'
-                ? 'bg-pending/10 border-pending/30'
-                : 'bg-rejected/10 border-rejected/30'
-            }`}
-          >
-            {isPass ? (
-              <CheckCircle2 className="text-verified w-12 h-12 shrink-0" />
-            ) : report.error_code === 'CREDENTIAL_EXPIRED' ? (
-              <AlertTriangle className="text-pending w-12 h-12 shrink-0" />
-            ) : (
-              <XCircle className="text-rejected w-12 h-12 shrink-0" />
-            )}
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 bg-void/90 backdrop-blur-md z-50 flex items-center justify-center p-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.25 }}
+        onClick={onClose}
+      >
+        <motion.div
+          className="bg-panel border border-line w-full max-w-xl flex flex-col max-h-[85vh] overflow-hidden"
+          initial={{ y: 24, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 24, opacity: 0 }}
+          transition={{ type: 'spring', damping: 28, stiffness: 360, delay: 0.05 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="px-8 pt-8 pb-4 border-b border-line flex items-start justify-between">
             <div>
-              {/* Serif Display Verdict */}
-              <h3
-                className={`text-3xl font-display font-semibold tracking-tight ${
-                  isPass ? 'text-verified' : report.error_code === 'CREDENTIAL_EXPIRED' ? 'text-pending' : 'text-rejected'
-                }`}
-              >
-                {verdictLabel}
-              </h3>
-              <p className="text-inkDim text-sm mt-1">{verdictSubline}</p>
-              <p className="text-inkDim/70 font-mono text-xs mt-2">
-                Flow ID: <span className="text-ink font-mono">{report.flow_id}</span>
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-panelLit p-4 rounded-xl border border-line">
-              <div className="text-inkDim text-xs font-mono uppercase tracking-wider mb-1">Issuer Authority</div>
-              <div className="text-ink font-medium">{report.issuer}</div>
-            </div>
-            <div className="bg-panelLit p-4 rounded-xl border border-line">
-              <div className="text-inkDim text-xs font-mono uppercase tracking-wider mb-1">Holder Wallet</div>
-              <div className="text-ink font-medium">{report.wallet}</div>
-            </div>
-            <div className="bg-panelLit p-4 rounded-xl border border-line">
-              <div className="text-inkDim text-xs font-mono uppercase tracking-wider mb-1">Relying Party Verifier</div>
-              <div className="text-ink font-medium">{report.verifier}</div>
-            </div>
-            <div className="bg-panelLit p-4 rounded-xl border border-line">
-              <div className="text-inkDim text-xs font-mono uppercase tracking-wider mb-1">Format & Cryptography</div>
-              <div className="text-ink font-medium">
-                {report.format} <span className="text-sealGold font-mono text-xs">({report.proof_type})</span>
+              <div className="text-[9px] font-mono text-inkDim tracking-[0.2em] uppercase mb-2">
+                Interoperability Case Dossier
+              </div>
+              <div className="text-[10px] font-mono text-inkDim/50">
+                Flow: {report.flow_id}
               </div>
             </div>
+            <button
+              onClick={onClose}
+              className="text-inkDim hover:text-ink text-xl leading-none transition-colors mt-1"
+              data-cursor="pointer"
+            >
+              ×
+            </button>
           </div>
 
-          {!isPass && report.error_code && (
-            <div className="bg-rejected/10 border border-rejected/25 p-4 rounded-xl">
-              <h4 className="text-rejected font-semibold text-sm mb-2 font-mono uppercase tracking-wide">
-                Diagnosed Failure Signature
-              </h4>
-              <p className="text-ink font-mono text-sm font-semibold">{report.error_code}</p>
-              {report.error_detail && <p className="text-inkDim text-sm mt-2 leading-relaxed">{report.error_detail}</p>}
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto p-8 flex flex-col gap-8">
+            {/* Verdict — using VerdictSeal as the cinematic centre */}
+            <VerdictSeal verdict={verdict} visible={true} />
+
+            {/* Technical details — two-column mono grid */}
+            <div className="border-t border-line pt-6">
+              <div className="grid grid-cols-2 gap-6">
+                {[
+                  { label: 'Issuer Authority', value: report.issuer },
+                  { label: 'Holder Wallet', value: report.wallet },
+                  { label: 'Relying Party', value: report.verifier },
+                  { label: 'Format', value: report.format },
+                  { label: 'Proof Type', value: report.proof_type },
+                  { label: 'Duration', value: `${report.duration_ms}ms` },
+                ].map(({ label, value }) => (
+                  <div key={label}>
+                    <div className="text-[9px] font-mono text-inkDim tracking-[0.15em] uppercase mb-1">
+                      {label}
+                    </div>
+                    <div className="text-xs font-mono text-ink">{value}</div>
+                  </div>
+                ))}
+              </div>
             </div>
-          )}
 
-          <div className="text-inkDim text-xs text-center font-mono">
-            Transaction finalized in <span className="text-ink font-bold">{report.duration_ms}ms</span> •{' '}
-            {new Date(report.created_at).toLocaleString()}
+            {/* Failure signature */}
+            {!isPass && report.error_code && (
+              <div className="border-t border-line pt-6">
+                <div className="text-[9px] font-mono text-inkDim tracking-[0.15em] uppercase mb-3">
+                  Failure Signature
+                </div>
+                <div className="font-mono text-sm text-rejected mb-2">{report.error_code}</div>
+                {report.error_detail && (
+                  <p className="text-xs font-ui text-inkDim leading-relaxed">{report.error_detail}</p>
+                )}
+              </div>
+            )}
           </div>
-        </div>
 
-        <div className="px-6 py-4 border-t border-line bg-panelLit flex justify-between items-center">
-          <button
-            onClick={onClose}
-            className="text-xs font-medium text-inkDim hover:text-ink transition-colors cursor-pointer"
-          >
-            Dismiss Dossier
-          </button>
-          <MagneticButton
-            onClick={downloadJson}
-            className="flex items-center gap-2 px-5 py-2.5 bg-panel hover:bg-line text-ink border border-line rounded-xl transition-all font-medium text-xs shadow-sm cursor-pointer"
-          >
-            <Download size={14} className="text-inkDim" />
-            Open Full Report (JSON)
-          </MagneticButton>
-        </div>
-      </div>
-    </div>
+          {/* Footer */}
+          <div className="px-8 pb-6 pt-4 border-t border-line flex items-center justify-between">
+            <button
+              onClick={onClose}
+              className="text-[10px] font-mono text-inkDim border-b border-inkDim/30 pb-px hover:text-ink hover:border-ink/60 transition-colors"
+              data-cursor="pointer"
+            >
+              Dismiss
+            </button>
+            <button
+              onClick={downloadJson}
+              className="flex items-center gap-2 text-[10px] font-mono text-inkDim hover:text-ink transition-colors"
+              data-cursor="pointer"
+            >
+              <Download size={11} />
+              Download JSON
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 

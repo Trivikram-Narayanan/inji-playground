@@ -1,7 +1,6 @@
 import React from 'react';
-import CredentialCard3D, { type Credential3DState } from './CredentialCard3D';
+import { type Credential3DState } from './CredentialObject';
 import MagneticButton from './MagneticButton';
-import { ArrowRight, Sparkles, Layers } from 'lucide-react';
 
 interface HeroSectionProps {
   onStartFlow: () => void;
@@ -15,75 +14,112 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   activeFormat = 'W3C VC (JSON-LD)',
 }) => {
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-line bg-gradient-to-b from-panel via-void to-void p-8 lg:p-12 mb-8 shadow-2xl backdrop-blur-xl">
-      {/* Background Subtle Radial Glow */}
-      <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[650px] h-[350px] bg-accent/10 rounded-full blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 right-10 w-[400px] h-[250px] bg-sealGold/10 rounded-full blur-3xl" />
+    <section className="relative min-h-screen flex flex-col">
+      {/* ── Two-column editorial grid ─────────────────────────────── */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-screen">
 
-      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-        {/* Left Column: Editorial Cinematic Typography */}
-        <div className="lg:col-span-7 flex flex-col items-start gap-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-panelLit border border-line text-inkDim text-xs font-mono font-medium tracking-wide">
-            <Sparkles size={13} className="text-inkDim" />
-            <span>MOSIP INJI CREDENTIALING INTEROPERABILITY</span>
+        {/* Left: Typography column */}
+        <div className="lg:col-span-6 flex flex-col justify-end px-6 lg:px-12 pb-16 lg:pb-24 pt-32 lg:pt-0">
+          {/* Eyebrow */}
+          <div className="mb-8">
+            <span className="text-[10px] font-mono text-inkDim tracking-[0.25em] uppercase">
+              Trust Protocol Testing ·{' '}
+              <span className="text-ink">{activeFormat}</span>
+            </span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-ink font-display leading-[1.12]">
-            A credential no one has to{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-ink via-ink to-sealGold italic font-display">
-              trust in advance.
-            </span>
+          {/* Primary display headline */}
+          <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-light leading-[1.05] tracking-tight text-ink mb-6">
+            When trust crosses
+            <br />
+            <em className="not-italic text-inkDim">a boundary,</em>
+            <br />
+            the protocol has to
+            <br />
+            <span className="italic">prove itself.</span>
           </h1>
 
-          <p className="text-inkDim text-base lg:text-lg max-w-xl font-ui leading-relaxed">
-            Simulate, stress-test, and cryptographically verify cross-module OpenID4VCI & OpenID4VP
-            exchanges. Inspect raw protocol payloads across W3C JSON-LD, SD-JWT, and mDoc.
+          {/* Description */}
+          <p className="text-inkDim text-sm lg:text-base font-ui leading-relaxed max-w-md mb-12">
+            Simulate and cryptographically verify OpenID4VCI and OpenID4VP
+            exchanges across W3C JSON-LD, SD-JWT, and mDoc credential formats.
+            Inspect every raw protocol payload.
           </p>
 
-          <div className="flex flex-wrap items-center gap-4 pt-2">
+          {/* Primary CTA — one, deliberate */}
+          <div className="flex items-center gap-6">
             <MagneticButton
+              id="hero-cta"
               onClick={onStartFlow}
-              className="px-7 py-3.5 bg-accent hover:bg-accent/90 text-white font-medium rounded-xl text-sm shadow-[0_0_20px_rgba(91,127,255,0.25)] transition-all flex items-center gap-2 group cursor-pointer"
+              className="group inline-flex items-center gap-3 px-8 py-4 bg-accent text-white font-ui font-medium text-sm tracking-wide transition-all duration-300"
+              data-cursor="pointer"
             >
               <span>Begin the exchange</span>
-              <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                className="transition-transform duration-300 group-hover:translate-x-1"
+              >
+                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </MagneticButton>
 
-            <div className="flex items-center gap-2 text-xs text-inkDim border border-line bg-panelLit/80 px-3.5 py-2.5 rounded-xl font-mono">
-              <Layers size={14} className="text-inkDim" />
-              <span>Active Architecture:</span>
-              <span className="text-ink font-semibold">{activeFormat}</span>
+            {/* Scroll indicator */}
+            <div className="flex items-center gap-2 text-inkDim">
+              <div className="w-px h-8 bg-line" />
+              <span className="text-[10px] font-mono tracking-widest uppercase">
+                Scroll
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Signature 3D Credential Canvas */}
-        <div className="lg:col-span-5 flex flex-col items-center justify-center relative">
-          <div className="w-full max-w-[420px] aspect-[4/3] rounded-2xl bg-panel/60 border border-line shadow-inner relative flex items-center justify-center overflow-hidden">
-            <CredentialCard3D state={credentialState} format={activeFormat} />
+        {/* Right: 3D credential canvas — full height, no border */}
+        <div className="lg:col-span-6 relative flex items-center justify-center min-h-[60vh] lg:min-h-screen">
+          {/* Vertical dividing rule between columns */}
+          <div className="hidden lg:block absolute left-0 top-16 bottom-16 w-px bg-line" />
 
-            {/* Live Holographic State Badge */}
-            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between px-3 py-1.5 rounded-xl bg-void/90 border border-line text-[11px] backdrop-blur-md">
-              <div className="flex items-center gap-2">
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    credentialState === 'verified'
-                      ? 'bg-verified animate-ping'
-                      : credentialState === 'rejected'
-                      ? 'bg-rejected animate-ping'
-                      : credentialState === 'expired'
-                      ? 'bg-pending animate-ping'
-                      : 'bg-accent'
-                  }`}
-                />
-                <span className="text-inkDim font-mono">Object State:</span>
-                <span className="text-ink font-mono font-semibold uppercase">{credentialState}</span>
+          {/* Canvas wrapper — no container card, fills the column */}
+          <div className="w-full h-full min-h-[60vh] lg:min-h-screen relative">
+            {/* Lazy-loaded 3D scene */}
+            <React.Suspense fallback={
+              <div className="w-full h-full flex items-center justify-center text-inkDim font-mono text-xs">
+                Loading scene…
               </div>
-              <span className="text-inkDim font-mono text-[10px]">WebGL R3F</span>
+            }>
+              {/* CredentialObject is imported dynamically in MainFlow to avoid circular import */}
+              <div id="credential-scene-mount" className="w-full h-full" />
+            </React.Suspense>
+          </div>
+
+          {/* Small state annotation — bottom of the right column */}
+          <div className="absolute bottom-8 left-8 lg:left-16">
+            <div className="flex items-center gap-2">
+              <span
+                className={`inline-block w-1.5 h-1.5 rounded-full ${
+                  credentialState === 'verified'
+                    ? 'bg-verified'
+                    : credentialState === 'rejected'
+                    ? 'bg-rejected'
+                    : credentialState === 'sealed'
+                    ? 'bg-sealGold'
+                    : credentialState === 'transit'
+                    ? 'bg-accent'
+                    : 'bg-line'
+                }`}
+              />
+              <span className="text-[10px] font-mono text-inkDim tracking-widest uppercase">
+                {credentialState}
+              </span>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Bottom thin rule */}
+      <div className="h-px bg-line" />
     </section>
   );
 };

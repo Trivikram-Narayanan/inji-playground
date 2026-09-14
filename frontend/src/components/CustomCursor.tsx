@@ -1,63 +1,106 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
+import gsap from 'gsap';
 
-export const CustomCursor: React.FC = () => {
-  const [position, setPosition] = useState({ x: -100, y: -100 });
-  const [isHovered, setIsHovered] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+/**
+ * CustomCursor — central dot + trailing ring.
+ * Reacts to data-cursor="pointer" (ring expands + fills slightly)
+ * and data-cursor="3d" (crosshair state on the credential canvas).
+ * Disabled on touch devices.
+ */
+const CustomCursor: React.FC = () => {
+  const dotRef = useRef<HTMLDivElement>(null);
+  const ringRef = useRef<HTMLDivElement>(null);
+  const xDot = useRef<ReturnType<typeof gsap.quickTo> | null>(null);
+  const yDot = useRef<ReturnType<typeof gsap.quickTo> | null>(null);
+  const xRing = useRef<ReturnType<typeof gsap.quickTo> | null>(null);
+  const yRing = useRef<ReturnType<typeof gsap.quickTo> | null>(null);
 
   useEffect(() => {
-    // Respect reduced motion
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion || window.innerWidth < 768) return;
+    // Disable on touch devices
+    if (window.matchMedia('(hover: none)').matches) return;
 
-    const handleMouseMove = (e: MouseEvent) => {
-      setPosition({ x: e.clientX, y: e.clientY });
-      if (!isVisible) setIsVisible(true);
-    };
+    const dot = dotRef.current;
+    const ring = ringRef.current;
+    if (!dot || !ring) return;
 
-    const handleMouseOver = (e: MouseEvent) => {
+    // QuickTo setters — dot snaps, ring trails
+    xDot.current = gsap.quickTo(dot, 'x', { duration: 0.1, ease: 'power3.out' });
+    yDot.current = gsap.quickTo(dot, 'y', { duration: 0.1, ease: 'power3.out' });
+    xRing.current = gsap.quickTo(ring, 'x', { duration: 0.55, ease: 'power3.out' });
+    yRing.current = gsap.quickTo(ring, 'y', { duration: 0.55, ease: 'power3.out' });
+
+    const onMove = (e: MouseEvent) => {
+      const x = e.clientX;
+      const y = e.clientY;
+      xDot.current!(x);
+      yDot.current!(y);
+      xRing.current!(x);
+      yRing.current!(y);
+
+      // State detection via data-cursor attribute
       const target = e.target as HTMLElement;
-      if (
-        target.tagName === 'BUTTON' ||
-        target.tagName === 'A' ||
-        target.closest('button') ||
-        target.closest('a') ||
-        target.getAttribute('role') === 'button'
-      ) {
-        setIsHovered(true);
+      const cursorState = target?.closest('[data-cursor]')?.getAttribute('data-cursor');
+
+      if (cursorState === 'pointer') {
+        gsap.to(ring, { scale: 1.8, borderColor: 'rgba(237,239,243,0.5)', duration: 0.3, ease: 'power2.out' });
+        gsap.to(dot, { scale: 0, duration: 0.2 });
+      } else if (cursorState === '3d') {
+        gsap.to(ring, { scale: 2.5, borderColor: 'rgba(91,127,255,0.4)', duration: 0.4, ease: 'power2.out' });
+        gsap.to(dot, { scale: 0.5, duration: 0.2 });
       } else {
-        setIsHovered(false);
+        gsap.to(ring, { scale: 1, borderColor: 'rgba(237,239,243,0.3)', duration: 0.4, ease: 'power2.out' });
+        gsap.to(dot, { scale: 1, duration: 0.2 });
       }
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseover', handleMouseOver);
+    const onLeave = () => {
+      gsap.to([dot, ring], { opacity: 0, duration: 0.3 });
+    };
+    const onEnter = () => {
+      gsap.to([dot, ring], { opacity: 1, duration: 0.3 });
+    };
+
+    window.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseleave', onLeave);
+    document.addEventListener('mouseenter', onEnter);
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseover', handleMouseOver);
+      window.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseleave', onLeave);
+      document.removeEventListener('mouseenter', onEnter);
     };
-  }, [isVisible]);
-
-  if (!isVisible) return null;
+  }, []);
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden transition-opacity duration-300">
-      {/* Inner Dot using Accent color */}
+    <>
+      {/* Central dot — snaps instantly */}
       <div
-        className="fixed w-2 h-2 bg-accent rounded-full -translate-x-1/2 -translate-y-1/2 transition-transform duration-75 ease-out shadow-[0_0_8px_rgba(91,127,255,0.8)]"
-        style={{ left: `${position.x}px`, top: `${position.y}px` }}
+        ref={dotRef}
+        className="pointer-events-none fixed z-[9999] rounded-full bg-ink"
+        style={{
+          width: '5px',
+          height: '5px',
+          transform: 'translate(-50%, -50%)',
+          top: 0,
+          left: 0,
+          willChange: 'transform',
+        }}
       />
-      {/* Outer Halo using SealGold on hover or Accent border */}
+      {/* Trailing ring — slower follow */}
       <div
-        className={`fixed rounded-full border -translate-x-1/2 -translate-y-1/2 transition-all duration-200 ease-out ${
-          isHovered
-            ? 'w-12 h-12 bg-sealGold/10 border-sealGold scale-110 backdrop-blur-[1px] shadow-[0_0_15px_rgba(201,162,75,0.25)]'
-            : 'w-8 h-8 border-accent/40 scale-100'
-        }`}
-        style={{ left: `${position.x}px`, top: `${position.y}px` }}
+        ref={ringRef}
+        className="pointer-events-none fixed z-[9998] rounded-full border"
+        style={{
+          width: '28px',
+          height: '28px',
+          transform: 'translate(-50%, -50%)',
+          top: 0,
+          left: 0,
+          borderColor: 'rgba(237,239,243,0.3)',
+          willChange: 'transform',
+        }}
       />
-    </div>
+    </>
   );
 };
 

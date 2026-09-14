@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* ─── Design Tokens ───────────────────────────────────────────── */
 @theme {
   --color-void: #08090C;
   --color-panel: #101318;
@@ -36,10 +37,165 @@
   --accent: #5B7FFF;
 }
 
+/* ─── Base ────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  cursor: none;
+}
+
 body {
   background-color: #08090C;
   color: #EDEFF3;
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Hide native cursor everywhere — custom cursor handles it */
+*, *::after, *::before {
+  cursor: none !important;
+}
+
+/* ─── Custom Scrollbar ────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #242A33;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a4352;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #242A33 transparent;
+}
+
+/* ─── Selection ───────────────────────────────────────────────── */
+::selection {
+  background: rgba(91, 127, 255, 0.25);
+  color: #EDEFF3;
+}
+
+/* ─── Grain Overlay Animation ─────────────────────────────────── */
+@keyframes grain {
+  0%,  100% { transform: translate(0, 0); }
+  10%        { transform: translate(-2%, -3%); }
+  20%        { transform: translate(-4%,  2%); }
+  30%        { transform: translate( 3%, -4%); }
+  40%        { transform: translate(-1%,  4%); }
+  50%        { transform: translate( 4%, -1%); }
+  60%        { transform: translate(-3%,  3%); }
+  70%        { transform: translate( 2%, -2%); }
+  80%        { transform: translate(-4%,  1%); }
+  90%        { transform: translate( 1%,  4%); }
+}
+
+.grain-animate {
+  animation: grain 8s steps(10) infinite;
+}
+
+/* ─── Glass Utility (restricted use only) ─────────────────────── */
+.glass {
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  background: rgba(16, 19, 24, 0.75);
+  border: 1px solid rgba(36, 42, 51, 0.8);
+}
+
+/* ─── Typography Utilities ────────────────────────────────────── */
+.font-display { font-family: var(--font-display); }
+.font-ui      { font-family: var(--font-ui); }
+.font-mono    { font-family: var(--font-mono); }
+
+/* ─── Act Rail Underline Animation ───────────────────────────── */
+@keyframes underline-grow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.act-underline {
+  transform-origin: left;
+  animation: underline-grow 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ─── Verdict Seal SVG Animation ─────────────────────────────── */
+@keyframes stroke-draw {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+.seal-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: stroke-draw 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ─── Verdict Word Reveal ─────────────────────────────────────── */
+@keyframes verdict-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+.verdict-reveal {
+  animation: verdict-reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ─── Trust Boundary Line Draw ───────────────────────────────── */
+@keyframes line-draw {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 0% 0 0); }
+}
+.line-draw {
+  animation: line-draw 1.0s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ─── Step Timeline Fade-in ──────────────────────────────────── */
+@keyframes step-appear {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.step-appear {
+  animation: step-appear 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ─── Mermaid Override ────────────────────────────────────────── */
+.mermaid-wrapper svg {
+  background: transparent !important;
+  max-width: 100%;
+}
+
+/* ─── Reduced Motion ─────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .grain-animate,
+  .act-underline,
+  .seal-draw,
+  .verdict-reveal,
+  .line-draw,
+  .step-appear {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Instant transitions for all Framer Motion elements */
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
