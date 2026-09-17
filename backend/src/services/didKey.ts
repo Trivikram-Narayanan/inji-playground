@@ -16,6 +16,22 @@ function b64urlToBytes(b64url: string): Uint8Array {
   return new Uint8Array(Buffer.from(b64, 'base64'));
 }
 
+/**
+ * Derives a did:jwk identifier from an already-generated Ed25519VerificationKey2020 keypair,
+ * for callers (e.g. the ldp_vc issuer, when playing a non-did:key ecosystem) that need a
+ * did:jwk issuer DID from a keypair created via `Ed25519VerificationKey2020.generate()`
+ * rather than jose's `generateHolderKey`. Round-trips through the same multibase<->JWK
+ * conversion `resolveDidJwk` expects, so the result resolves via `resolveDidUrl` unchanged.
+ */
+export function didJwkFromEd25519KeyPair(keyPair: { publicKeyMultibase: string }): string {
+  const decoded = base58.decode(keyPair.publicKeyMultibase.slice(1)); // drop 'z' multibase prefix
+  const rawPublicKey = decoded.slice(MULTICODEC_ED25519_PUB_PREFIX.length);
+  const x = Buffer.from(rawPublicKey).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const jwk = { kty: 'OKP', crv: 'Ed25519', x, alg: 'EdDSA' };
+  const encoded = Buffer.from(JSON.stringify(jwk)).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return `did:jwk:${encoded}`;
+}
+
 /** Builds a minimal did:key DID document + verification method, resolved locally (self-certifying, no network). */
 export async function resolveDidKey(did: string) {
   const fingerprint = did.replace('did:key:', '').split('#')[0];

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Activity, CheckCircle, XCircle } from 'lucide-react';
+import { Activity, CheckCircle, XCircle, Percent } from 'lucide-react';
 import type { InteropReport } from './ReportView';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:3000/api';
@@ -28,33 +28,66 @@ const Dashboard: React.FC = () => {
     fetchDashboard();
   }, []);
 
+  const formatBreakdown = useMemo(() => {
+    const byFormat = new Map<string, { total: number; passed: number }>();
+    for (const r of reports) {
+      const entry = byFormat.get(r.format) ?? { total: 0, passed: 0 };
+      entry.total += 1;
+      if (r.outcome === 'pass') entry.passed += 1;
+      byFormat.set(r.format, entry);
+    }
+    return Array.from(byFormat.entries()).map(([format, { total, passed }]) => ({
+      format,
+      total,
+      passed,
+      passRate: total > 0 ? Math.round((passed / total) * 100) : 0,
+    }));
+  }, [reports]);
+
   if (isLoading) {
-    return <div className="flex-1 flex items-center justify-center text-indigo-400">Loading Dashboard...</div>;
+    return (
+      <div role="status" aria-live="polite" className="flex flex-col gap-6">
+        <span className="sr-only">Loading dashboard…</span>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 shadow-lg h-[76px] animate-pulse" aria-hidden="true" />
+          ))}
+        </div>
+        <div className="bg-slate-800/50 rounded-xl border border-slate-700 shadow-lg h-64 animate-pulse" aria-hidden="true" />
+      </div>
+    );
   }
 
   return (
     <div className="flex flex-col gap-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
         <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 shadow-lg flex items-center gap-4">
-          <div className="p-3 bg-blue-500/20 rounded-lg"><Activity className="text-blue-400" /></div>
+          <div className="p-3 bg-blue-500/20 rounded-lg"><Activity className="text-blue-400" aria-hidden="true" /></div>
           <div>
             <div className="text-2xl font-bold text-slate-200">{stats?.totalTests || 0}</div>
             <div className="text-sm text-slate-400">Total Runs</div>
           </div>
         </div>
         <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 shadow-lg flex items-center gap-4">
-          <div className="p-3 bg-green-500/20 rounded-lg"><CheckCircle className="text-green-400" /></div>
+          <div className="p-3 bg-green-500/20 rounded-lg"><CheckCircle className="text-green-400" aria-hidden="true" /></div>
           <div>
             <div className="text-2xl font-bold text-slate-200">{stats?.passed || 0}</div>
             <div className="text-sm text-slate-400">Passed</div>
           </div>
         </div>
         <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 shadow-lg flex items-center gap-4">
-          <div className="p-3 bg-red-500/20 rounded-lg"><XCircle className="text-red-400" /></div>
+          <div className="p-3 bg-red-500/20 rounded-lg"><XCircle className="text-red-400" aria-hidden="true" /></div>
           <div>
             <div className="text-2xl font-bold text-slate-200">{stats?.failed || 0}</div>
             <div className="text-sm text-slate-400">Failed</div>
+          </div>
+        </div>
+        <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 shadow-lg flex items-center gap-4">
+          <div className="p-3 bg-indigo-500/20 rounded-lg"><Percent className="text-indigo-400" aria-hidden="true" /></div>
+          <div>
+            <div className="text-2xl font-bold text-slate-200">{stats?.passRate ?? 0}%</div>
+            <div className="text-sm text-slate-400">Pass Rate</div>
           </div>
         </div>
         <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 shadow-lg flex flex-col justify-center gap-1">
@@ -65,6 +98,38 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Format Breakdown */}
+      {formatBreakdown.length > 0 && (
+        <div className="bg-slate-800/50 rounded-xl border border-slate-700 shadow-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-700 bg-slate-800/80">
+            <h2 className="text-lg font-bold text-slate-200">Pass Rate by Format</h2>
+          </div>
+          <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            {formatBreakdown.map((f) => (
+              <div key={f.format} className="flex flex-col gap-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-300 font-medium">{f.format}</span>
+                  <span className="text-slate-400">{f.passed}/{f.total} ({f.passRate}%)</span>
+                </div>
+                <div
+                  className="h-2 rounded-full bg-slate-700 overflow-hidden"
+                  role="progressbar"
+                  aria-valuenow={f.passRate}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`${f.format} pass rate`}
+                >
+                  <div
+                    className={`h-full ${f.passRate >= 80 ? 'bg-green-500' : f.passRate >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                    style={{ width: `${f.passRate}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Reports Table */}
       <div className="bg-slate-800/50 rounded-xl border border-slate-700 shadow-lg overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-700 bg-slate-800/80">
@@ -72,13 +137,14 @@ const Dashboard: React.FC = () => {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-slate-300">
+            <caption className="sr-only">Recent test runs with outcome and error details</caption>
             <thead className="text-xs text-slate-400 uppercase bg-slate-900/50 border-b border-slate-700">
               <tr>
-                <th className="px-6 py-3">Date</th>
-                <th className="px-6 py-3">Format</th>
-                <th className="px-6 py-3">Issuer / Wallet / Verifier</th>
-                <th className="px-6 py-3">Outcome</th>
-                <th className="px-6 py-3">Error (if any)</th>
+                <th scope="col" className="px-6 py-3">Date</th>
+                <th scope="col" className="px-6 py-3">Format</th>
+                <th scope="col" className="px-6 py-3">Issuer / Wallet / Verifier</th>
+                <th scope="col" className="px-6 py-3">Outcome</th>
+                <th scope="col" className="px-6 py-3">Error (if any)</th>
               </tr>
             </thead>
             <tbody>

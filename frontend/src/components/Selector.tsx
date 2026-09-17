@@ -25,7 +25,7 @@ const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:3000/api';
 
 const LABELS: Record<string, { label: string; desc?: string }> = {
   'inji-certify': { label: 'Inji Certify', desc: 'Default MOSIP issuer' },
-  'external-mock': { label: 'External Mock', desc: 'Cross-ecosystem test' },
+  'external-mock': { label: 'External Mock', desc: 'Generic OpenID4VC reference ecosystem (did:jwk issuer, non-MOSIP)' },
   'inji-wallet-mobile': { label: 'Inji Wallet (Mobile)', desc: 'Mobile app via QR' },
   'inji-web': { label: 'Inji Web', desc: 'Browser-based holder' },
   'inji-verify': { label: 'Inji Verify', desc: 'Default MOSIP verifier' },
@@ -80,18 +80,20 @@ const Selector: React.FC<SelectorProps> = ({ onRunTest }) => {
 
   const OptionCard = ({ icon: Icon, title, ids, selected, onSelect }: any) => (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2 text-slate-300 font-medium">
-        <Icon size={18} className="text-indigo-400" />
+      <div className="flex items-center gap-2 text-slate-300 font-medium" id={`${title}-label`}>
+        <Icon size={18} className="text-indigo-400" aria-hidden="true" />
         {title}
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2" role="radiogroup" aria-labelledby={`${title}-label`}>
         {ids.map((id: string) => {
           const meta = LABELS[id] || { label: id };
           return (
             <button
               key={id}
+              role="radio"
+              aria-checked={selected === id}
               onClick={() => onSelect(id)}
-              className={`text-left px-4 py-3 rounded-lg border transition-all duration-200 ${
+              className={`text-left px-4 py-3 rounded-lg border transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${
                 selected === id
                   ? 'bg-indigo-500/10 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.15)] ring-1 ring-indigo-500/50'
                   : 'bg-slate-800/50 border-slate-700 hover:border-slate-500 hover:bg-slate-700/50'
@@ -120,10 +122,11 @@ const Selector: React.FC<SelectorProps> = ({ onRunTest }) => {
           <input
             type="checkbox"
             className="sr-only peer"
+            aria-label="Toggle Real Mode"
             checked={config.mode === 'real'}
             onChange={(e) => handleSelect('mode', e.target.checked ? 'real' : 'simulated')}
           />
-          <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+          <div className="w-11 h-6 bg-slate-700 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-red-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
         </label>
       </div>
 
@@ -147,8 +150,9 @@ const Selector: React.FC<SelectorProps> = ({ onRunTest }) => {
                   <button
                     key={f.id}
                     onClick={() => handleSelect('format', f.id)}
+                    aria-pressed={config.format === f.id}
                     title={unavailableInReal ? 'No sandbox issuer offers this format in Real Mode - switch to Simulated Mode to use it' : undefined}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 border ${
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${
                       config.format === f.id
                         ? 'bg-indigo-500 border-indigo-400 text-white shadow-lg shadow-indigo-500/20'
                         : 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700'
@@ -168,11 +172,18 @@ const Selector: React.FC<SelectorProps> = ({ onRunTest }) => {
               Tamper Mode:
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" checked={config.tamperMode} onChange={(e) => handleSelect('tamperMode', e.target.checked)} />
-              <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                aria-label="Toggle Tamper Mode"
+                checked={config.tamperMode}
+                onChange={(e) => handleSelect('tamperMode', e.target.checked)}
+              />
+              <div className="w-11 h-6 bg-slate-700 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-yellow-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
             </label>
             {config.tamperMode && (
               <select
+                aria-label="Tamper type"
                 className="bg-slate-800 border border-slate-600 text-slate-200 text-sm rounded-lg px-3 py-1.5 outline-none focus:border-yellow-500"
                 value={config.tamperType}
                 onChange={(e) => handleSelect('tamperType', e.target.value)}
@@ -189,9 +200,9 @@ const Selector: React.FC<SelectorProps> = ({ onRunTest }) => {
 
         <button
           onClick={() => onRunTest(config)}
-          className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-white font-bold rounded-lg shadow-lg shadow-indigo-500/25 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+          className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-white font-bold rounded-lg shadow-lg shadow-indigo-500/25 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300"
         >
-          <Play size={18} fill="currentColor" />
+          <Play size={18} fill="currentColor" aria-hidden="true" />
           Run Test
         </button>
       </div>

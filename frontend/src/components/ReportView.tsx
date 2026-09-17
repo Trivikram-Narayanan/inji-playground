@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Download, FileText, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 
 export interface InteropReport {
@@ -23,6 +23,14 @@ interface ReportViewProps {
 const ReportView: React.FC<ReportViewProps> = ({ report, onClose }) => {
   const isPass = report.outcome === 'pass';
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   const downloadJson = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(report, null, 2));
     const dlAnchorElem = document.createElement('a');
@@ -32,14 +40,29 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-      <div className="bg-slate-900 border border-slate-700 shadow-2xl rounded-xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+    <div
+      className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-6"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="report-view-title"
+        onClick={(e) => e.stopPropagation()}
+        className="animate-slide-in-fade bg-slate-900 border border-slate-700 shadow-2xl rounded-xl w-full max-w-2xl flex flex-col max-h-[90vh]"
+      >
         <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-800/50">
           <div className="flex items-center gap-3">
-            <FileText className="text-indigo-400" />
-            <h2 className="text-xl font-bold text-slate-200">Interoperability Report</h2>
+            <FileText className="text-indigo-400" aria-hidden="true" />
+            <h2 id="report-view-title" className="text-xl font-bold text-slate-200">Interoperability Report</h2>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-200 text-2xl leading-none">&times;</button>
+          <button
+            onClick={onClose}
+            aria-label="Close report"
+            className="text-slate-400 hover:text-slate-200 text-2xl leading-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+          >
+            &times;
+          </button>
         </div>
 
         <div className="p-6 overflow-y-auto custom-scrollbar flex-1 flex flex-col gap-6">
@@ -92,11 +115,11 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onClose }) => {
         </div>
 
         <div className="px-6 py-4 border-t border-slate-800 bg-slate-800/50 flex justify-end">
-          <button 
+          <button
             onClick={downloadJson}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors font-medium text-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors font-medium text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
           >
-            <Download size={16} />
+            <Download size={16} aria-hidden="true" />
             Export JSON
           </button>
         </div>

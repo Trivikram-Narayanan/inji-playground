@@ -32,3 +32,16 @@ test('ldp_vc: expired tamper is rejected as CREDENTIAL_EXPIRED', async () => {
   assert.equal(outcome.valid, false);
   assert.equal(outcome.errorCode, 'CREDENTIAL_EXPIRED');
 });
+
+test('ldp_vc: issuing with didMethod "did:jwk" produces a did:jwk issuer DID that still verifies', async () => {
+  const { credential } = await ldpVc.issue({ fullName: 'Jane Doe' }, undefined, 'did:jwk');
+  assert.match(credential.issuer, /^did:jwk:/);
+  const outcome = await ldpVc.verify(credential);
+  assert.equal(outcome.valid, true);
+  assert.equal(outcome.errorCode, null);
+});
+
+test('ldp_vc: default didMethod is still did:key (unchanged behavior when the param is omitted)', async () => {
+  const { credential } = await ldpVc.issue({ fullName: 'Jane Doe' });
+  assert.match(credential.issuer, /^did:key:/);
+});

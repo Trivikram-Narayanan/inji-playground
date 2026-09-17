@@ -1,11 +1,42 @@
 import { Router } from 'express';
 import { Orchestrator } from '../services/orchestrator';
 import { subscribe } from '../services/eventBus';
+import { FORMAT_REGISTRY } from '../formats/registry';
 
 const router = Router();
 
+const KNOWN_ACTORS = ['inji-certify', 'external-mock', 'inji-wallet-mobile', 'inji-web', 'inji-verify'];
+const KNOWN_TAMPER_TYPES = ['claim-corruption', 'bad-signature', 'expired'];
+
+function validateStartFlowBody(body: any): string | null {
+  if (typeof body !== 'object' || body === null) return 'Request body must be a JSON object';
+  for (const field of ['issuer', 'wallet', 'verifier', 'format'] as const) {
+    if (typeof body[field] !== 'string' || body[field].trim() === '') {
+      return `"${field}" is required and must be a non-empty string`;
+    }
+  }
+  if (!KNOWN_ACTORS.includes(body.issuer)) return `Unknown issuer "${body.issuer}"`;
+  if (!KNOWN_ACTORS.includes(body.wallet)) return `Unknown wallet "${body.wallet}"`;
+  if (!KNOWN_ACTORS.includes(body.verifier)) return `Unknown verifier "${body.verifier}"`;
+  if (!(body.format in FORMAT_REGISTRY)) return `Unknown format "${body.format}"`;
+  if (body.mode !== undefined && !['real', 'simulated'].includes(body.mode)) {
+    return `"mode" must be "real" or "simulated"`;
+  }
+  if (body.tamperMode !== undefined && typeof body.tamperMode !== 'boolean') {
+    return `"tamperMode" must be a boolean`;
+  }
+  if (body.tamperMode && body.tamperType !== undefined && !KNOWN_TAMPER_TYPES.includes(body.tamperType)) {
+    return `Unknown tamperType "${body.tamperType}"`;
+  }
+  return null;
+}
+
 // POST /api/flows - Start a new test run
 router.post('/', async (req, res) => {
+  const validationError = validateStartFlowBody(req.body);
+  if (validationError) {
+    return res.status(400).json({ error: validationError, errorCode: 'INVALID_REQUEST' });
+  }
   try {
     const result = await Orchestrator.startFlow(req.body);
     res.status(201).json(result);

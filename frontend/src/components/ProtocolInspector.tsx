@@ -30,7 +30,7 @@ const ProtocolInspector: React.FC<ProtocolInspectorProps> = ({ event }) => {
         </span>
       </div>
       
-      <div className="flex-1 overflow-auto p-4 custom-scrollbar">
+      <div className="flex-1 overflow-auto p-4 custom-scrollbar" tabIndex={0} aria-label={`Raw payload for ${event.step}`}>
         <pre className="text-sm text-slate-300 font-mono whitespace-pre-wrap break-words">
           {JSON.stringify(JSON.parse(event.payload), null, 2)}
         </pre>

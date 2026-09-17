@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Selector, { type FlowConfig } from './Selector';
 import LiveFlowTimeline, { type FlowStatus, type FlowEvent, TERMINAL_STATUSES } from './LiveFlowTimeline';
@@ -83,6 +83,14 @@ const MainFlow: React.FC = () => {
     }
   };
 
+  // Auto-dismiss after a while, but leave the manual close button as the accessible fallback
+  // (screen-reader/low-vision users shouldn't have to race a timer to read the error).
+  useEffect(() => {
+    if (!startError) return;
+    const timer = setTimeout(() => setStartError(null), 8000);
+    return () => clearTimeout(timer);
+  }, [startError]);
+
   const handleAdvanceFlow = async () => {
     if (!flow?.id) return;
     try {
@@ -104,23 +112,23 @@ const MainFlow: React.FC = () => {
       </section>
 
       {startError && (
-        <div className="bg-red-500/10 border border-red-500/40 text-red-300 rounded-lg px-4 py-3 text-sm flex items-start justify-between gap-4">
+        <div role="alert" className="animate-slide-in-fade bg-red-500/10 border border-red-500/40 text-red-300 rounded-lg px-4 py-3 text-sm flex items-start justify-between gap-4">
           <span>{startError}</span>
-          <button onClick={() => setStartError(null)} className="text-red-400 hover:text-red-200 text-lg leading-none">&times;</button>
+          <button onClick={() => setStartError(null)} aria-label="Dismiss error" className="text-red-400 hover:text-red-200 text-lg leading-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400">&times;</button>
         </div>
       )}
 
       {/* Middle: Live Flow & Bottom: Protocol Inspector */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[500px]">
-        <section className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6 backdrop-blur-sm shadow-xl flex flex-col">
-          <h2 className="text-lg font-semibold mb-4 text-slate-200 flex items-center justify-between">
+        <section className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6 backdrop-blur-sm shadow-xl flex flex-col" aria-labelledby="live-timeline-heading">
+          <h2 id="live-timeline-heading" className="text-lg font-semibold mb-4 text-slate-200 flex items-center justify-between">
             <span className="flex items-center gap-2">
               Live Timeline
               {flow?.mode === 'real' && (
                 <span className="text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/40 rounded-full px-2 py-0.5 tracking-wide">LIVE</span>
               )}
             </span>
-            {isLoading && <span className="text-sm text-indigo-400">Starting...</span>}
+            {isLoading && <span role="status" className="text-sm text-indigo-400">Starting...</span>}
           </h2>
           <LiveFlowTimeline
             flow={flow}
@@ -131,8 +139,8 @@ const MainFlow: React.FC = () => {
           />
         </section>
 
-        <section className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6 backdrop-blur-sm shadow-xl flex flex-col">
-          <h2 className="text-lg font-semibold mb-4 text-slate-200">Protocol Inspector</h2>
+        <section className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6 backdrop-blur-sm shadow-xl flex flex-col" aria-labelledby="protocol-inspector-heading">
+          <h2 id="protocol-inspector-heading" className="text-lg font-semibold mb-4 text-slate-200">Protocol Inspector</h2>
           <ProtocolInspector event={selectedEvent} />
         </section>
       </div>

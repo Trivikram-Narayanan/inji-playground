@@ -83,24 +83,26 @@ const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
         <div className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-lg border border-slate-800 text-xs">
           <button
             onClick={() => setViewMode('list')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition-all ${
+            aria-pressed={viewMode === 'list'}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${
               viewMode === 'list'
                 ? 'bg-indigo-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
             }`}
           >
-            <List size={14} />
+            <List size={14} aria-hidden="true" />
             Step Timeline
           </button>
           <button
             onClick={() => setViewMode('diagram')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition-all ${
+            aria-pressed={viewMode === 'diagram'}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${
               viewMode === 'diagram'
                 ? 'bg-indigo-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
             }`}
           >
-            <GitCommit size={14} />
+            <GitCommit size={14} aria-hidden="true" />
             Mermaid Sequence Diagram
           </button>
         </div>
@@ -117,20 +119,22 @@ const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
           <div className="flex items-center gap-2 mb-4 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
             <button
               onClick={() => setDeviceMode('cross-device')}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition-all ${
+              aria-pressed={deviceMode === 'cross-device'}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${
                 deviceMode === 'cross-device' ? 'bg-slate-800 text-indigo-300 border border-slate-700' : 'text-slate-500'
               }`}
             >
-              <QrCode size={13} />
+              <QrCode size={13} aria-hidden="true" />
               Cross-Device (QR Code)
             </button>
             <button
               onClick={() => setDeviceMode('same-device')}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition-all ${
+              aria-pressed={deviceMode === 'same-device'}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${
                 deviceMode === 'same-device' ? 'bg-slate-800 text-indigo-300 border border-slate-700' : 'text-slate-500'
               }`}
             >
-              <Smartphone size={13} />
+              <Smartphone size={13} aria-hidden="true" />
               Same-Device (Deep-Link / Digital Credentials API)
             </button>
           </div>
@@ -139,7 +143,12 @@ const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
             <div className="flex flex-col items-center">
               <p className="text-xs text-indigo-300 font-medium mb-3">Scan with Inji Wallet Mobile</p>
               <div className="p-3 bg-white rounded-xl mb-4 shadow-md">
-                <QRCodeSVG value={JSON.stringify(flow.offer)} size={170} />
+                <QRCodeSVG
+                  value={JSON.stringify(flow.offer)}
+                  size={170}
+                  role="img"
+                  aria-label="QR code encoding the credential offer for the Inji Wallet Mobile app to scan"
+                />
               </div>
             </div>
           ) : (
@@ -205,7 +214,7 @@ const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
       )}
 
       {flow.status === 'FAILED' && (
-        <div className="p-4 rounded-lg font-bold text-center border bg-red-500/20 text-red-400 border-red-500/50">
+        <div role="alert" className="p-4 rounded-lg font-bold text-center border bg-red-500/20 text-red-400 border-red-500/50">
           <div className="text-base">⚠️ Real Sandbox Call Failed</div>
           <p className="text-xs font-normal text-red-300/80 mt-1.5">
             The MOSIP Collab sandbox didn't complete this step. Check the Protocol Inspector for the raw error, or retry in Simulated Mode.
@@ -216,6 +225,7 @@ const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
       {/* Result Banner if flow is complete */}
       {['VERIFIED_VALID', 'VERIFIED_INVALID', 'VERIFIED_EXPIRED'].includes(flow.status) && (
         <div
+          role="status"
           className={`p-4 rounded-lg font-bold text-center border flex flex-col items-center justify-center gap-2.5 ${
             flow.result === 'valid'
               ? 'bg-green-500/20 text-green-400 border-green-500/50'
@@ -249,13 +259,18 @@ const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
             const event = flow.events.find((e) => e.step === step.id);
             const isCompleted = event?.status === 'success';
             const isPending = !event && (index === 0 || completedStepIds.includes(STEPS[index - 1].id));
+            const statusLabel = isCompleted ? 'completed' : isPending ? 'in progress' : 'not started';
             return (
-              <div
+              <button
                 key={step.id}
-                className={`flex items-start gap-3.5 p-3.5 rounded-lg border transition-all duration-200 ${
+                type="button"
+                disabled={!event}
+                onClick={() => event && onEventClick(event)}
+                aria-label={`${step.label} (${statusLabel})`}
+                className={`w-full text-left flex items-start gap-3.5 p-3.5 rounded-lg border transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${
                   event
                     ? 'cursor-pointer hover:bg-slate-700/50 hover:border-slate-500 active:scale-[0.99]'
-                    : 'opacity-60 grayscale'
+                    : 'opacity-60 grayscale cursor-default'
                 } ${
                   isCompleted
                     ? 'bg-slate-800/80 border-green-500/30'
@@ -263,15 +278,14 @@ const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
                     ? 'bg-indigo-900/20 border-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.1)]'
                     : 'bg-slate-800/30 border-slate-700/50'
                 }`}
-                onClick={() => event && onEventClick(event)}
               >
                 <div className="mt-0.5">
                   {isCompleted ? (
-                    <CheckCircle2 className="text-green-400" size={18} />
+                    <CheckCircle2 className="text-green-400" size={18} aria-hidden="true" />
                   ) : isPending ? (
-                    <Loader2 className="text-indigo-400 animate-spin" size={18} />
+                    <Loader2 className="text-indigo-400 animate-spin" size={18} aria-hidden="true" />
                   ) : (
-                    <Circle className="text-slate-600" size={18} />
+                    <Circle className="text-slate-600" size={18} aria-hidden="true" />
                   )}
                 </div>
                 <div className="flex-1">
@@ -289,7 +303,7 @@ const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
                     </div>
                   )}
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
