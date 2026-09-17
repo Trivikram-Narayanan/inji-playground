@@ -32,6 +32,21 @@ export function createApp() {
   app.use('/api/reports', reportRoutes);
   app.use('/api/config', configRoutes);
 
+  app.get('/', (_req, res) => {
+    res.json({
+      service: 'Inji Interoperability Playground BFF API',
+      status: 'online',
+      version: 'v2.0-sec_audit',
+      docs: '/api/docs',
+      health: '/health',
+      endpoints: {
+        config: '/api/config/options',
+        flows: '/api/flows',
+        reports: '/api/reports',
+      },
+    });
+  });
+
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok' });
   });
