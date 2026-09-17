@@ -8,6 +8,7 @@ import { publish } from './eventBus';
 import { withTimeout, StepTimeoutError } from './timeout';
 import { triageFailure } from './failureTriage';
 import { sandboxConfig } from '../config';
+import { getEcosystem, checkDidMethodTrust } from '../ecosystems/registry';
 
 export type FlowConfig = {
   issuer: string;
@@ -175,7 +176,10 @@ export class Orchestrator {
   private static async advanceSimulatedFlow(flow: any, db: any) {
     const flowId = flow.id;
     const formatId = flow.format as FormatId;
-    const isCrossEcosystemFail = flow.issuer === 'external-mock' && flow.wallet === 'inji-wallet-mobile' && flow.format === 'w3c-vc-jsonld';
+    // Only the w3c-vc-jsonld path issues with an ecosystem-specific DID method (see
+    // formats/ldpVc.ts); sd-jwt-vc/mdoc use a format-native key mechanism the trust
+    // matrix doesn't model, so the DID-method trust gate is scoped to that format.
+    const didTrust = formatId === 'w3c-vc-jsonld' ? checkDidMethodTrust(flow.issuer, flow.verifier) : null;
 
     await wait(STEP_DELAY_MS);
     await insertEvent(db, flowId, { step: 'token_exchange', actor: 'wallet', payload: { grant_type: 'pre-authorized_code', pre_authorized_code: 'mock_code' }, status: 'success' });
@@ -184,7 +188,8 @@ export class Orchestrator {
     await wait(STEP_DELAY_MS);
     let rawCredential: any;
     try {
-      rawCredential = await withTimeout(issueByFormat(formatId), sandboxConfig.stepTimeoutMs, 'CREDENTIAL_ISSUED');
+      const didMethod = formatId === 'w3c-vc-jsonld' ? getEcosystem(flow.issuer).issuerDidMethod : undefined;
+      rawCredential = await withTimeout(issueByFormat(formatId, undefined, didMethod), sandboxConfig.stepTimeoutMs, 'CREDENTIAL_ISSUED');
     } catch (err: any) {
       const errorCode = err instanceof StepTimeoutError ? 'TIMEOUT' : 'UNKNOWN_ERROR';
       await insertEvent(db, flowId, { step: 'credential_issued', actor: 'issuer', payload: { error: err.message }, status: 'error' });
@@ -220,7 +225,14 @@ export class Orchestrator {
     });
     await setStatus(db, flowId, 'PRESENTED');
 
-    const crossEcosystemOverride = isCrossEcosystemFail ? { valid: false, errorCode: 'DID_METHOD_GAP', errorDetail: 'external-mock issuer DID method not resolvable by Inji Wallet', checks: { did_resolved: false } } : null;
+    const crossEcosystemOverride = didTrust && !didTrust.trusted
+      ? {
+          valid: false,
+          errorCode: 'DID_METHOD_GAP',
+          errorDetail: `${didTrust.issuerEcosystem.label} issues with ${didTrust.issuerEcosystem.issuerDidMethod}, which ${didTrust.verifierEcosystem.label}'s verifier does not trust (accepts: ${didTrust.verifierEcosystem.trustedIssuerDidMethods.join(', ')})`,
+          checks: { did_method_trusted: false },
+        }
+      : null;
     const outcome = crossEcosystemOverride || (await verifyCredential(formatId, credentialForPresentation));
 
     return Orchestrator.finishVerification(db, flow, outcome, 'success');

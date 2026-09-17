@@ -1,145 +1,155 @@
-import React, { useState } from 'react';
-import { Selector } from './Selector';
-import { LiveFlowTimeline, TERMINAL_STATUSES } from './LiveFlowTimeline';
-import { ReportView } from './ReportView';
-import { ActRail } from './ActRail';
-import { InspectorDrawer } from './InspectorDrawer';
-import type { FlowEvent, FlowStatus, InteropReport } from '../types/flow';
-import { useFlowStream, type FlowStreamUpdate } from '../hooks/useFlowStream';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import Selector, { type FlowConfig } from './Selector';
+import LiveFlowTimeline, { type FlowStatus, type FlowEvent, TERMINAL_STATUSES } from './LiveFlowTimeline';
+import ProtocolInspector from './ProtocolInspector';
+import ReportView, { type InteropReport } from './ReportView';
+import { useFlowStream } from '../hooks/useFlowStream';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:3000/api';
 
-/**
- * MainFlow orchestration container.
- * Coordinates user selection, live SSE streaming events, Act I/II/III progression,
- * and bottom inspector drawer updates.
- */
-export const MainFlow: React.FC = () => {
-  const [flowId, setFlowId] = useState<string | null>(null);
-  const [flowStatus, setFlowStatus] = useState<FlowStatus | null>(null);
-  const [events, setEvents] = useState<FlowEvent[]>([]);
+const MainFlow: React.FC = () => {
+  const [flow, setFlow] = useState<FlowStatus | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<FlowEvent | null>(null);
   const [report, setReport] = useState<InteropReport | null>(null);
-  const [activeFormat, setActiveFormat] = useState('w3c-vc-jsonld');
   const [isLoading, setIsLoading] = useState(false);
+  const [isAdvancing, setIsAdvancing] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
 
-  // Subscribe to live SSE events from backend
-  useFlowStream(flowId, (update: FlowStreamUpdate) => {
-    if (update.type === 'event' && update.data) {
-      setEvents((prev) => [...prev, update.data as unknown as FlowEvent]);
-    } else if (update.type === 'status' && update.data) {
-      setFlowStatus((prev) => ({
-        ...prev,
-        ...(update.data as unknown as FlowStatus),
-      }));
+  const fetchReport = async (flowId: string) => {
+    try {
+      const reportRes = await axios.get(`${API_BASE}/flows/${flowId}/report`);
+      setReport(reportRes.data);
+    } catch (err) {
+      console.error('Failed to fetch report:', err);
+    }
+  };
 
-      // Check if reached a terminal status to fetch final verification report
-      const incomingStatus = (update.data as { status?: string }).status;
-      if (
-        incomingStatus &&
-        (TERMINAL_STATUSES as readonly string[]).includes(incomingStatus) &&
-        flowId
-      ) {
-        fetch(`${API_BASE}/flows/${flowId}/report`)
-          .then((res) => res.json())
-          .then((rep: InteropReport) => setReport(rep))
-          .catch(() => {});
+  const fetchFlowData = async (flowId: string) => {
+    try {
+      const [statusRes, eventsRes] = await Promise.all([
+        axios.get(`${API_BASE}/flows/${flowId}`),
+        axios.get(`${API_BASE}/flows/${flowId}/events`),
+      ]);
+      setFlow({ ...statusRes.data, events: eventsRes.data.events });
+      if (TERMINAL_STATUSES.includes(statusRes.data.status)) {
+        await fetchReport(flowId);
+      }
+    } catch (err) {
+      console.error('Failed to fetch flow:', err);
+    }
+  };
+
+  // Live updates via SSE once a flow exists - covers Simulated Mode's step-by-step
+  // pacing in full, and Real Mode's presentation/verification phase (Real Mode's
+  // issuance phase completes server-side before the stream connects, so that part
+  // arrives via the initial fetchFlowData call instead).
+  useFlowStream(flow?.id ?? null, (update) => {
+    if (update.type === 'event') {
+      setFlow((prev) => {
+        if (!prev || prev.events.some((e) => e.id === update.data.id)) return prev;
+        return { ...prev, events: [...prev.events, update.data] };
+      });
+    } else if (update.type === 'status') {
+      setFlow((prev) => (prev ? { ...prev, status: update.data.status, result: update.data.result ?? prev.result } : prev));
+      if (TERMINAL_STATUSES.includes(update.data.status) && flow?.id) {
+        fetchReport(flow.id);
       }
     }
   });
 
-  const handleStartFlow = async (config: {
-    issuer: string;
-    wallet: string;
-    verifier: string;
-    format: string;
-    mode: 'simulated' | 'real';
-    tamperMode: boolean;
-    tamperType?: 'claim-corruption' | 'bad-signature' | 'expired';
-  }) => {
-    setIsLoading(true);
-    setActiveFormat(config.format);
+  const handleRunTest = async (config: FlowConfig) => {
     try {
-      const res = await fetch(`${API_BASE}/flows`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config),
-      });
-      const data = await res.json();
-      setFlowId(data.flowId);
-      setEvents([]);
+      setIsLoading(true);
+      setSelectedEvent(null);
       setReport(null);
+      setShowReport(false);
+      setStartError(null);
+      const res = await axios.post(`${API_BASE}/flows`, config);
+      const { flowId } = res.data;
 
-      // Fetch initial flow status
-      const statusRes = await fetch(`${API_BASE}/flows/${data.flowId}`);
-      const statusData = await statusRes.json();
-      setFlowStatus(statusData);
-    } catch (err) {
-      console.error('Failed to initiate flow:', err);
+      // Initial fetch
+      await fetchFlowData(flowId);
+    } catch (error: any) {
+      console.error('Error starting flow:', error);
+      const data = error?.response?.data;
+      setStartError(data?.error || 'Failed to start the test run.');
+      if (data?.flowId) {
+        await fetchFlowData(data.flowId);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleAdvance = async () => {
-    if (!flowId) return;
+  // Auto-dismiss after a while, but leave the manual close button as the accessible fallback
+  // (screen-reader/low-vision users shouldn't have to race a timer to read the error).
+  useEffect(() => {
+    if (!startError) return;
+    const timer = setTimeout(() => setStartError(null), 8000);
+    return () => clearTimeout(timer);
+  }, [startError]);
+
+  const handleAdvanceFlow = async () => {
+    if (!flow?.id) return;
     try {
-      await fetch(`${API_BASE}/flows/${flowId}/advance`, { method: 'POST' });
-    } catch (err) {
-      console.error('Failed to advance flow step:', err);
+      setIsAdvancing(true);
+      await axios.post(`${API_BASE}/flows/${flow.id}/advance`);
+      await fetchFlowData(flow.id);
+    } catch (error) {
+      console.error('Error advancing flow:', error);
+    } finally {
+      setIsAdvancing(false);
     }
   };
 
-  const handleReset = () => {
-    setFlowId(null);
-    setFlowStatus(null);
-    setEvents([]);
-    setReport(null);
-  };
-
-  // Determine current narrative act
-  const currentAct: 1 | 2 | 3 = report
-    ? 3
-    : events.some((e) => e.step === 'authorization_request' || e.step === 'presentation')
-    ? 2
-    : 1;
-
-  const canAdvance =
-    flowId !== null &&
-    !report &&
-    flowStatus?.status !== 'VERIFIED_VALID' &&
-    flowStatus?.status !== 'FAILED';
-
   return (
-    <div className="w-full min-h-[calc(100vh-3.5rem)] flex flex-col justify-between pb-24">
-      {/* Chapter Rail */}
-      <ActRail
-        currentAct={currentAct}
-        canAdvance={canAdvance}
-        onAdvance={handleAdvance}
-      />
+    <div className="flex flex-col gap-6">
+      {/* Top: Selector UI */}
+      <section className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6 backdrop-blur-sm shadow-xl">
+        <Selector onRunTest={handleRunTest} />
+      </section>
 
-      {/* Main Narrative Progression */}
-      <div className="flex-1 flex flex-col justify-center">
-        {!flowId ? (
-          <Selector onStartFlow={handleStartFlow} isLoading={isLoading} />
-        ) : report ? (
-          <ReportView report={report} onReset={handleReset} />
-        ) : (
-          flowStatus && (
-            <LiveFlowTimeline
-              flowStatus={flowStatus}
-              events={events}
-              format={activeFormat}
-            />
-          )
-        )}
+      {startError && (
+        <div role="alert" className="animate-slide-in-fade bg-red-500/10 border border-red-500/40 text-red-300 rounded-lg px-4 py-3 text-sm flex items-start justify-between gap-4">
+          <span>{startError}</span>
+          <button onClick={() => setStartError(null)} aria-label="Dismiss error" className="text-red-400 hover:text-red-200 text-lg leading-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400">&times;</button>
+        </div>
+      )}
+
+      {/* Middle: Live Flow & Bottom: Protocol Inspector */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[500px]">
+        <section className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6 backdrop-blur-sm shadow-xl flex flex-col" aria-labelledby="live-timeline-heading">
+          <h2 id="live-timeline-heading" className="text-lg font-semibold mb-4 text-slate-200 flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              Live Timeline
+              {flow?.mode === 'real' && (
+                <span className="text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/40 rounded-full px-2 py-0.5 tracking-wide">LIVE</span>
+              )}
+            </span>
+            {isLoading && <span role="status" className="text-sm text-indigo-400">Starting...</span>}
+          </h2>
+          <LiveFlowTimeline
+            flow={flow}
+            onEventClick={setSelectedEvent}
+            onAdvanceFlow={handleAdvanceFlow}
+            isAdvancing={isAdvancing}
+            onViewReport={() => setShowReport(true)}
+          />
+        </section>
+
+        <section className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6 backdrop-blur-sm shadow-xl flex flex-col" aria-labelledby="protocol-inspector-heading">
+          <h2 id="protocol-inspector-heading" className="text-lg font-semibold mb-4 text-slate-200">Protocol Inspector</h2>
+          <ProtocolInspector event={selectedEvent} />
+        </section>
       </div>
 
-      {/* Persistent Developer Protocol Inspector Drawer */}
-      <InspectorDrawer
-        events={events}
-        activeStep={events[events.length - 1]?.step}
-      />
+      {showReport && report && (
+        <ReportView report={report} onClose={() => setShowReport(false)} />
+      )}
     </div>
   );
 };
+
+export default MainFlow;

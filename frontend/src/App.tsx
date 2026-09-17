@@ -1,15 +1,19 @@
-import React, { useState } from 'react';
-import { Layout } from './components/Layout';
-import { MainFlow } from './components/MainFlow';
-import { Dashboard } from './components/Dashboard';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Layout from './components/Layout';
+import MainFlow from './components/MainFlow';
+import Dashboard from './components/Dashboard';
 
-export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'flow' | 'archive'>('flow');
-
+const App: React.FC = () => {
   return (
-    <Layout activeTab={activeTab} onSelectTab={setActiveTab}>
-      {activeTab === 'flow' ? <MainFlow /> : <Dashboard />}
-    </Layout>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<MainFlow />} />
+          <Route path="dashboard" element={<Dashboard />} />
+        </Route>
+      </Routes>
+    </Router>
   );
 };
 

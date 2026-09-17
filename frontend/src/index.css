@@ -1,120 +1,28 @@
 @import "tailwindcss";
 
-/* ─── Design Tokens ───────────────────────────────────────────── */
-@theme {
-  --color-void: #08090C;
-  --color-panel: #101318;
-  --color-panelLit: #171B22;
-  --color-line: #242A33;
-  --color-ink: #EDEFF3;
-  --color-inkDim: #7C8494;
-  --color-sealGold: #C9A24B;
-  --color-verified: #3FCC8F;
-  --color-pending: #D8A63D;
-  --color-rejected: #E4574F;
-  --color-accent: #5B7FFF;
-
-  --font-display: 'Fraunces', Georgia, serif;
-  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-}
-
-:root {
-  --font-display: 'Fraunces', Georgia, serif;
-  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-
-  --void: #08090C;
-  --panel: #101318;
-  --panelLit: #171B22;
-  --line: #242A33;
-  --ink: #EDEFF3;
-  --inkDim: #7C8494;
-  --sealGold: #C9A24B;
-  --verified: #3FCC8F;
-  --pending: #D8A63D;
-  --rejected: #E4574F;
-  --accent: #5B7FFF;
-}
-
-/* ─── Base ────────────────────────────────────────────────────── */
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
-html {
-  cursor: none;
-  background-color: #08090C;
-}
-
-body {
-  background-color: #08090C;
-  color: #EDEFF3;
-  font-family: var(--font-ui);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-}
-
-/* Hide native cursor — CustomCursor component manages pointer */
-*, *::after, *::before {
-  cursor: none !important;
-}
-
-/* ─── Custom Scrollbar ────────────────────────────────────────── */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-::-webkit-scrollbar-track {
-  background: #08090C;
-}
-::-webkit-scrollbar-thumb {
-  background: #242A33;
-  border-radius: 2px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #3A4352;
-}
-
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #242A33 #08090C;
-}
-
-/* ─── Selection ───────────────────────────────────────────────── */
-::selection {
-  background: rgba(91, 127, 255, 0.25);
-  color: #EDEFF3;
-}
-
-/* ─── Grain Overlay Animation ─────────────────────────────────── */
-@keyframes grain {
-  0%,  100% { transform: translate(0, 0); }
-  10%        { transform: translate(-2%, -3%); }
-  20%        { transform: translate(-4%,  2%); }
-  30%        { transform: translate( 3%, -4%); }
-  40%        { transform: translate(-1%,  4%); }
-  50%        { transform: translate( 4%, -1%); }
-  60%        { transform: translate(-3%,  3%); }
-  70%        { transform: translate( 2%, -2%); }
-  80%        { transform: translate(-1%, -4%); }
-  90%        { transform: translate( 3%,  2%); }
-}
-
-.animate-grain {
-  animation: grain 7s steps(10) infinite;
-}
-
-/* ─── Accessibility & Reduced Motion ─────────────────────────── */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+@layer base {
+  body {
+    @apply bg-slate-900 text-slate-50 antialiased;
   }
-  .animate-grain {
-    animation: none !important;
+}
+
+@keyframes slide-in-fade {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in-fade {
+  animation: slide-in-fade 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-in-fade {
+    animation: none;
   }
 }

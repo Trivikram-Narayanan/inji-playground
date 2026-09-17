@@ -11,6 +11,36 @@ on:
   workflow_dispatch:
 
 jobs:
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Type-check
+        working-directory: frontend
+        run: npx tsc -b
+
+      - name: Run frontend test suite
+        working-directory: frontend
+        run: npm test
+
   test-matrix:
     runs-on: ubuntu-latest
 

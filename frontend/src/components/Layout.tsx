@@ -1,88 +1,58 @@
-import React, { useEffect } from 'react';
-import Lenis from 'lenis';
-import { GrainOverlay } from './GrainOverlay';
-import { CustomCursor } from './CustomCursor';
+import React from 'react';
+import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Beaker, LayoutDashboard } from 'lucide-react';
 
-interface LayoutProps {
-  children: React.ReactNode;
-  activeTab: 'flow' | 'archive';
-  onSelectTab: (tab: 'flow' | 'archive') => void;
-}
-
-/**
- * Layout shell providing:
- * - Minimal architectural header with tab switcher
- * - Smooth scrolling with Lenis (Section 25)
- * - Subtle animated grain overlay (Section 27)
- * - Spring magnetic custom cursor (Section 24)
- */
-export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onSelectTab }) => {
-  useEffect(() => {
-    // Check prefers-reduced-motion (Section 30 requirement)
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      return;
-    }
-
-    const lenis = new Lenis({
-      duration: 1.1,
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
-    });
-
-    function raf(time: number) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
-    requestAnimationFrame(raf);
-
-    return () => {
-      lenis.destroy();
-    };
-  }, []);
+const Layout: React.FC = () => {
+  const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-void text-ink selection:bg-accent/25 selection:text-ink font-ui relative">
-      <GrainOverlay />
-      <CustomCursor />
-
-      {/* Global Architectural Navigation Bar */}
-      <header className="border-b border-line bg-void/90 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="w-2.5 h-2.5 bg-sealGold" />
-            <span className="font-mono text-xs tracking-wider uppercase font-semibold text-ink">
-              INJI INTEROPERABILITY PLAYGROUND
-            </span>
-          </div>
-
-          {/* Navigation Controls */}
-          <nav className="flex items-center gap-6">
-            <button
-              onClick={() => onSelectTab('flow')}
-              className={`font-mono text-xs uppercase tracking-wider transition-colors ${
-                activeTab === 'flow'
-                  ? 'text-sealGold border-b border-sealGold pb-0.5'
-                  : 'text-inkDim hover:text-ink'
-              }`}
-            >
-              EXCHANGE FLOW
-            </button>
-            <button
-              onClick={() => onSelectTab('archive')}
-              className={`font-mono text-xs uppercase tracking-wider transition-colors ${
-                activeTab === 'archive'
-                  ? 'text-sealGold border-b border-sealGold pb-0.5'
-                  : 'text-inkDim hover:text-ink'
-              }`}
-            >
-              CASE FILES
-            </button>
-          </nav>
+    <div className="min-h-screen bg-slate-900 text-slate-50 flex flex-col font-sans relative">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:rounded-lg focus:bg-indigo-500 focus:text-white"
+      >
+        Skip to main content
+      </a>
+      <header className="px-6 py-4 border-b border-slate-800 bg-slate-950 shadow-md z-10 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+            Inji Interoperability Playground
+          </h1>
+          <p className="text-sm text-slate-400 mt-1">Cross-module VC testing sandbox</p>
         </div>
+        <nav className="flex items-center gap-2" aria-label="Primary">
+          <Link
+            to="/"
+            aria-current={location.pathname === '/' ? 'page' : undefined}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${
+              location.pathname === '/'
+                ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+          >
+            <Beaker size={18} aria-hidden="true" />
+            New Test
+          </Link>
+          <Link
+            to="/dashboard"
+            aria-current={location.pathname === '/dashboard' ? 'page' : undefined}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${
+              location.pathname === '/dashboard'
+                ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+          >
+            <LayoutDashboard size={18} aria-hidden="true" />
+            Dashboard
+          </Link>
+        </nav>
       </header>
 
-      {/* Primary Experience Stage */}
-      <main className="w-full relative">{children}</main>
+      <main id="main-content" tabIndex={-1} className="flex-1 p-6 flex flex-col max-w-7xl mx-auto w-full">
+        <Outlet />
+      </main>
     </div>
   );
 };
+
+export default Layout;
