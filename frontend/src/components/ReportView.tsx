@@ -1,26 +1,13 @@
 import React, { useEffect } from 'react';
-import { Download, FileText, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
-
-export interface InteropReport {
-  flow_id: string;
-  issuer: string;
-  wallet: string;
-  verifier: string;
-  format: string;
-  proof_type: string;
-  outcome: 'pass' | 'fail';
-  duration_ms: number;
-  error_code?: string;
-  error_detail?: string;
-  created_at: string;
-}
+import { Download, FileText, CheckCircle2, XCircle, AlertTriangle, Clock } from 'lucide-react';
+import type { InteropReport } from '../types';
 
 interface ReportViewProps {
   report: InteropReport;
   onClose: () => void;
 }
 
-const ReportView: React.FC<ReportViewProps> = ({ report, onClose }) => {
+export const ReportView: React.FC<ReportViewProps> = ({ report, onClose }) => {
   const isPass = report.outcome === 'pass';
 
   useEffect(() => {
@@ -32,16 +19,16 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onClose }) => {
   }, [onClose]);
 
   const downloadJson = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(report, null, 2));
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(report, null, 2));
     const dlAnchorElem = document.createElement('a');
-    dlAnchorElem.setAttribute("href", dataStr);
-    dlAnchorElem.setAttribute("download", `report-${report.flow_id.slice(0,8)}.json`);
+    dlAnchorElem.setAttribute('href', dataStr);
+    dlAnchorElem.setAttribute('download', `interop-report-${report.flow_id.slice(0, 8)}.json`);
     dlAnchorElem.click();
   };
 
   return (
     <div
-      className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-6"
+      className="fixed inset-0 bg-[#090a0c]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-6"
       onClick={onClose}
     >
       <div
@@ -49,78 +36,108 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onClose }) => {
         aria-modal="true"
         aria-labelledby="report-view-title"
         onClick={(e) => e.stopPropagation()}
-        className="animate-slide-in-fade bg-slate-900 border border-slate-700 shadow-2xl rounded-xl w-full max-w-2xl flex flex-col max-h-[90vh]"
+        className="bg-[#0f1115] border border-[#ffffff14] shadow-2xl rounded-none w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden relative"
       >
-        <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-800/50">
-          <div className="flex items-center gap-3">
-            <FileText className="text-indigo-400" aria-hidden="true" />
-            <h2 id="report-view-title" className="text-xl font-bold text-slate-200">Interoperability Report</h2>
+        {/* Hairline accent line */}
+        <div className={`h-[2px] w-full ${isPass ? 'bg-[#22c55e]' : 'bg-[#ff4d2e]'}`} />
+
+        {/* Header */}
+        <div className="px-5 py-3 border-b border-[#ffffff14] flex justify-between items-center bg-[#090a0c]">
+          <div className="flex items-center gap-2 font-mono">
+            <FileText size={15} className="text-[#e5a93c]" />
+            <h2 id="report-view-title" className="text-sm font-bold text-[#f0f2f5] tracking-wide">
+              INTEROPERABILITY_CERTIFICATE
+            </h2>
+            <span className="text-[#535965] text-xs">:: {report.flow_id.slice(0, 8)}</span>
           </div>
           <button
             onClick={onClose}
             aria-label="Close report"
-            className="text-slate-400 hover:text-slate-200 text-2xl leading-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+            className="text-[#8a919e] hover:text-[#f0f2f5] text-lg leading-none px-2 py-0.5 border border-[#ffffff14] hover:border-[#ffffff2e]"
           >
             &times;
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 flex flex-col gap-6">
-          <div className={`p-6 rounded-xl flex items-center gap-4 ${isPass ? 'bg-green-500/10 border border-green-500/30' : 'bg-red-500/10 border border-red-500/30'}`}>
+        {/* Body */}
+        <div className="p-5 overflow-y-auto custom-scrollbar flex-1 flex flex-col gap-4 font-mono">
+          {/* Outcome Banner */}
+          <div
+            className={`p-4 border flex items-center gap-3.5 ${
+              isPass
+                ? 'bg-[#22c55e]/10 border-[#22c55e]/40 text-[#22c55e]'
+                : 'bg-[#ff4d2e]/10 border-[#ff4d2e]/40 text-[#ff4d2e]'
+            }`}
+          >
             {isPass ? (
-              <CheckCircle2 className="text-green-500 w-12 h-12" />
+              <CheckCircle2 size={24} />
             ) : report.error_code === 'CREDENTIAL_EXPIRED' ? (
-              <AlertTriangle className="text-yellow-500 w-12 h-12" />
+              <AlertTriangle size={24} className="text-[#e5a93c]" />
             ) : (
-              <XCircle className="text-red-500 w-12 h-12" />
+              <XCircle size={24} />
             )}
             <div>
-              <h3 className={`text-2xl font-bold ${isPass ? 'text-green-400' : 'text-red-400'}`}>
-                {isPass ? 'Test Passed' : 'Test Failed'}
-              </h3>
-              <p className="text-slate-400 text-sm mt-1">Run ID: <span className="font-mono text-slate-500">{report.flow_id}</span></p>
+              <div className="text-base font-bold tracking-wider">
+                {isPass ? 'CRYPTOGRAPHIC VERIFICATION VALID' : 'CRYPTOGRAPHIC VERIFICATION REJECTED'}
+              </div>
+              <div className="text-xs opacity-80 mt-0.5">
+                PROOF TYPE: {report.proof_type || 'DIGITAL_SIGNATURE'}
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700/50">
-              <div className="text-slate-500 text-sm mb-1">Issuer</div>
-              <div className="text-slate-200 font-medium">{report.issuer}</div>
+          {/* Grid of Actors & Format */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            <div className="bg-[#090a0c] p-2.5 border border-[#ffffff14]">
+              <div className="text-[#535965] text-[9px] uppercase tracking-wider mb-1">ISSUER</div>
+              <div className="text-[#f0f2f5] font-bold truncate">{report.issuer}</div>
             </div>
-            <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700/50">
-              <div className="text-slate-500 text-sm mb-1">Wallet</div>
-              <div className="text-slate-200 font-medium">{report.wallet}</div>
+            <div className="bg-[#090a0c] p-2.5 border border-[#ffffff14]">
+              <div className="text-[#535965] text-[9px] uppercase tracking-wider mb-1">WALLET</div>
+              <div className="text-[#e5a93c] font-bold truncate">{report.wallet}</div>
             </div>
-            <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700/50">
-              <div className="text-slate-500 text-sm mb-1">Verifier</div>
-              <div className="text-slate-200 font-medium">{report.verifier}</div>
+            <div className="bg-[#090a0c] p-2.5 border border-[#ffffff14]">
+              <div className="text-[#535965] text-[9px] uppercase tracking-wider mb-1">VERIFIER</div>
+              <div className="text-[#f0f2f5] font-bold truncate">{report.verifier}</div>
             </div>
-            <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700/50">
-              <div className="text-slate-500 text-sm mb-1">Format & Proof</div>
-              <div className="text-slate-200 font-medium">{report.format} <span className="text-slate-500">({report.proof_type})</span></div>
+            <div className="bg-[#090a0c] p-2.5 border border-[#ffffff14]">
+              <div className="text-[#535965] text-[9px] uppercase tracking-wider mb-1">FORMAT</div>
+              <div className="text-[#f0f2f5] font-bold truncate">{report.format}</div>
             </div>
           </div>
 
+          {/* Error Diagnostics (if failed) */}
           {!isPass && report.error_code && (
-            <div className="bg-red-950/30 border border-red-500/20 p-4 rounded-lg">
-              <h4 className="text-red-400 font-semibold mb-2">Error Details</h4>
-              <p className="text-slate-300 font-mono text-sm">{report.error_code}</p>
-              {report.error_detail && <p className="text-slate-400 text-sm mt-2">{report.error_detail}</p>}
+            <div className="bg-[#090a0c] border border-[#ff4d2e]/40 p-3.5">
+              <div className="text-[#ff4d2e] font-bold text-xs uppercase tracking-wider mb-1">
+                DIAGNOSTIC_CODE: [{report.error_code}]
+              </div>
+              {report.error_detail && (
+                <p className="text-[#8a919e] text-xs mt-1 leading-relaxed font-sans">
+                  {report.error_detail}
+                </p>
+              )}
             </div>
           )}
 
-          <div className="text-slate-500 text-sm text-center">
-            Completed in {report.duration_ms}ms at {new Date(report.created_at).toLocaleString()}
+          {/* Telemetry info */}
+          <div className="flex items-center justify-between text-[#535965] text-[10px] pt-2 border-t border-[#ffffff0f]">
+            <span className="flex items-center gap-1">
+              <Clock size={11} />
+              LATENCY: {report.duration_ms}ms
+            </span>
+            <span>RECORDED_AT: {new Date(report.created_at).toLocaleString()}</span>
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-slate-800 bg-slate-800/50 flex justify-end">
+        {/* Footer Actions */}
+        <div className="px-5 py-2.5 border-t border-[#ffffff14] bg-[#090a0c] flex justify-end">
           <button
             onClick={downloadJson}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors font-medium text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#e5a93c] hover:bg-[#d4982c] text-[#090a0c] text-xs font-mono font-bold uppercase rounded-none transition-colors"
           >
-            <Download size={16} aria-hidden="true" />
-            Export JSON
+            <Download size={13} />
+            EXPORT JSON
           </button>
         </div>
       </div>
