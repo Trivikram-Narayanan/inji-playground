@@ -26,20 +26,20 @@
     "jose": "^6.2.12",
     "jsonld": "^9.0.0",
     "jsonld-signatures": "^11.6.0",
-    "sqlite": "^5.1.1",
-    "sqlite3": "^6.0.1",
-    "uuid": "^14.0.2"
-  },
-  "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^26.5.1",
-    "@types/supertest": "^7.2.1",
     "@types/uuid": "^10.0.0",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^6.0.1",
+    "typescript": "^7.0.2",
+    "uuid": "^14.0.2"
+  },
+  "devDependencies": {
+    "@types/supertest": "^7.2.1",
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
-    "tsx": "^4.23.13",
-    "typescript": "^7.0.2"
+    "tsx": "^4.23.13"
   }
 }
