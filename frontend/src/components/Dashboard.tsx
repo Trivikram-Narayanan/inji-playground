@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Activity, CheckCircle, XCircle, Percent } from 'lucide-react';
-import type { InteropReport } from './ReportView';
+import { Activity, CheckCircle2, XCircle, Percent, AlertOctagon } from 'lucide-react';
+import type { InteropReport } from '../types';
+import { API_BASE } from '../api/client';
+import { LabCard, BracketBadge } from './ui/LabPrimitives';
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:3000/api';
-
-const Dashboard: React.FC = () => {
+export const Dashboard: React.FC = () => {
   const [reports, setReports] = useState<InteropReport[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,134 +44,246 @@ const Dashboard: React.FC = () => {
     }));
   }, [reports]);
 
+  const compatibilityMatrix = useMemo(() => {
+    const map = new Map<string, { total: number; passed: number; format: string }>();
+    for (const r of reports) {
+      const key = `${r.issuer} → ${r.wallet} → ${r.verifier}`;
+      const existing = map.get(key) ?? { total: 0, passed: 0, format: r.format };
+      existing.total += 1;
+      if (r.outcome === 'pass') existing.passed += 1;
+      map.set(key, existing);
+    }
+    return Array.from(map.entries()).map(([route, { total, passed, format }]) => ({
+      route,
+      total,
+      passed,
+      passRate: Math.round((passed / total) * 100),
+      format,
+    }));
+  }, [reports]);
+
   if (isLoading) {
     return (
       <div role="status" aria-live="polite" className="flex flex-col gap-6">
-        <span className="sr-only">Loading dashboard…</span>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+        <span className="sr-only">Loading Interoperability Observatory…</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 shadow-lg h-[76px] animate-pulse" aria-hidden="true" />
+            <div key={i} className="bg-[#0f1115] border border-[#ffffff14] p-4 h-24 animate-pulse" aria-hidden="true" />
           ))}
         </div>
-        <div className="bg-slate-800/50 rounded-xl border border-slate-700 shadow-lg h-64 animate-pulse" aria-hidden="true" />
+        <div className="bg-[#0f1115] border border-[#ffffff14] h-64 animate-pulse" aria-hidden="true" />
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-        <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 shadow-lg flex items-center gap-4">
-          <div className="p-3 bg-blue-500/20 rounded-lg"><Activity className="text-blue-400" aria-hidden="true" /></div>
-          <div>
-            <div className="text-2xl font-bold text-slate-200">{stats?.totalTests || 0}</div>
-            <div className="text-sm text-slate-400">Total Runs</div>
+      {/* Top Header Banner matching Overview & Laboratory */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0f1115] border border-[#ffffff14] p-5">
+        <div>
+          <div className="text-[10px] font-mono text-[#535965] uppercase tracking-widest mb-1">
+            // TELEMETRY_OBSERVATORY
+          </div>
+          <h2 className="text-xl font-bold font-mono tracking-tight text-[#f0f2f5] flex items-center gap-2">
+            <span className="w-2 h-2 bg-[#e5a93c]" />
+            INTEROPERABILITY OBSERVATORY
+          </h2>
+          <p className="text-xs text-[#8a919e] mt-0.5 font-sans">
+            Continuous verification telemetry, format distributions, and tri-party routing health
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <BracketBadge variant="gold">
+            {reports.length} VERIFIED RUNS
+          </BracketBadge>
+        </div>
+      </div>
+
+      {/* Telemetry Stat Cards: Neutral outline icons + Warm Gold / Crimson semantics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        {/* Total Runs */}
+        <div className="bg-[#0f1115] border border-[#ffffff14] p-4 flex items-center gap-3.5">
+          <div className="p-2 border border-[#ffffff14] text-[#8a919e]">
+            <Activity size={18} />
+          </div>
+          <div className="font-mono">
+            <div className="text-2xl font-bold text-[#f0f2f5]">{stats?.totalTests || 0}</div>
+            <div className="text-[10px] uppercase tracking-wider text-[#535965]">TOTAL RUNS</div>
           </div>
         </div>
-        <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 shadow-lg flex items-center gap-4">
-          <div className="p-3 bg-green-500/20 rounded-lg"><CheckCircle className="text-green-400" aria-hidden="true" /></div>
-          <div>
-            <div className="text-2xl font-bold text-slate-200">{stats?.passed || 0}</div>
-            <div className="text-sm text-slate-400">Passed</div>
+
+        {/* Passed */}
+        <div className="bg-[#0f1115] border border-[#ffffff14] p-4 flex items-center gap-3.5">
+          <div className="p-2 border border-[#22c55e]/30 text-[#22c55e]">
+            <CheckCircle2 size={18} />
+          </div>
+          <div className="font-mono">
+            <div className="text-2xl font-bold text-[#22c55e]">{stats?.passed || 0}</div>
+            <div className="text-[10px] uppercase tracking-wider text-[#535965]">PASSED</div>
           </div>
         </div>
-        <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 shadow-lg flex items-center gap-4">
-          <div className="p-3 bg-red-500/20 rounded-lg"><XCircle className="text-red-400" aria-hidden="true" /></div>
-          <div>
-            <div className="text-2xl font-bold text-slate-200">{stats?.failed || 0}</div>
-            <div className="text-sm text-slate-400">Failed</div>
+
+        {/* Failed */}
+        <div className="bg-[#0f1115] border border-[#ffffff14] p-4 flex items-center gap-3.5">
+          <div className="p-2 border border-[#ff4d2e]/30 text-[#ff4d2e]">
+            <XCircle size={18} />
+          </div>
+          <div className="font-mono">
+            <div className="text-2xl font-bold text-[#ff4d2e]">{stats?.failed || 0}</div>
+            <div className="text-[10px] uppercase tracking-wider text-[#535965]">REJECTED</div>
           </div>
         </div>
-        <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 shadow-lg flex items-center gap-4">
-          <div className="p-3 bg-indigo-500/20 rounded-lg"><Percent className="text-indigo-400" aria-hidden="true" /></div>
-          <div>
-            <div className="text-2xl font-bold text-slate-200">{stats?.passRate ?? 0}%</div>
-            <div className="text-sm text-slate-400">Pass Rate</div>
+
+        {/* Pass Rate */}
+        <div className="bg-[#0f1115] border border-[#ffffff14] p-4 flex items-center gap-3.5">
+          <div className="p-2 border border-[#e5a93c]/30 text-[#e5a93c]">
+            <Percent size={18} />
+          </div>
+          <div className="font-mono">
+            <div className="text-2xl font-bold text-[#f0f2f5]">{stats?.passRate ?? 0}%</div>
+            <div className="text-[10px] uppercase tracking-wider text-[#535965]">Pass Rate</div>
           </div>
         </div>
-        <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 shadow-lg flex flex-col justify-center gap-1">
-          <div className="text-sm text-slate-400">Common Error</div>
-          <div className="text-lg font-bold text-slate-200 truncate" title={stats?.mostCommonError}>
-            {stats?.mostCommonError || 'N/A'}
+
+
+        {/* Most Common Error */}
+        <div className="bg-[#0f1115] border border-[#ffffff14] p-4 flex items-center gap-3.5">
+          <div className="p-2 border border-[#ffffff14] text-[#8a919e]">
+            <AlertOctagon size={18} />
+          </div>
+          <div className="min-w-0 font-mono">
+            <div className="text-xs font-bold text-[#ff4d2e] truncate" title={stats?.mostCommonError}>
+              {stats?.mostCommonError || 'NONE'}
+            </div>
+            <div className="text-[10px] uppercase tracking-wider text-[#535965]">COMMON ERROR</div>
           </div>
         </div>
       </div>
 
-      {/* Format Breakdown */}
+      {/* Format Breakdown & Compatibility Matrix Grid */}
       {formatBreakdown.length > 0 && (
-        <div className="bg-slate-800/50 rounded-xl border border-slate-700 shadow-lg overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-700 bg-slate-800/80">
-            <h2 className="text-lg font-bold text-slate-200">Pass Rate by Format</h2>
-          </div>
-          <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            {formatBreakdown.map((f) => (
-              <div key={f.format} className="flex flex-col gap-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-300 font-medium">{f.format}</span>
-                  <span className="text-slate-400">{f.passed}/{f.total} ({f.passRate}%)</span>
-                </div>
-                <div
-                  className="h-2 rounded-full bg-slate-700 overflow-hidden"
-                  role="progressbar"
-                  aria-valuenow={f.passRate}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-label={`${f.format} pass rate`}
-                >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Format Pass Rates */}
+          <LabCard
+            title="Pass Rate by Format"
+            subtitle="Benchmark pass rates segmented by W3C VC, SD-JWT VC, and mDoc specification"
+          >
+            <div className="space-y-4">
+              {formatBreakdown.map((f) => (
+                <div key={f.format} className="flex flex-col gap-1.5 font-mono text-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-[#f0f2f5]">{f.format}</span>
+                    <span className="text-[#8a919e]">
+                      {f.passed}/{f.total} ({f.passRate}%)
+                    </span>
+                  </div>
                   <div
-                    className={`h-full ${f.passRate >= 80 ? 'bg-green-500' : f.passRate >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                    style={{ width: `${f.passRate}%` }}
-                  />
+                    className="h-1.5 bg-[#090a0c] border border-[#ffffff14] overflow-hidden"
+                    role="progressbar"
+                    aria-valuenow={f.passRate}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`${f.format} pass rate`}
+                  >
+                    <div
+                      className={`h-full ${
+                        f.passRate >= 80 ? 'bg-[#22c55e]' : f.passRate >= 50 ? 'bg-[#e5a93c]' : 'bg-[#ff4d2e]'
+                      }`}
+                      style={{ width: `${f.passRate}%` }}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </LabCard>
+
+          {/* Participant Route Compatibility Matrix */}
+          <LabCard
+            title="INTEROPERABILITY ROUTE MATRIX"
+            subtitle="Tri-party verification health across Issuer → Wallet → Verifier vectors"
+          >
+            <div className="space-y-2 font-mono text-xs max-h-56 overflow-y-auto custom-scrollbar pr-1">
+              {compatibilityMatrix.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="p-2.5 bg-[#090a0c] border border-[#ffffff14] flex items-center justify-between gap-3"
+                >
+                  <div className="min-w-0">
+                    <div className="text-[#f0f2f5] font-semibold truncate">{item.route}</div>
+                    <div className="text-[10px] text-[#535965]">{item.format}</div>
+                  </div>
+                  <span
+                    className={`px-2 py-0.5 text-[10px] font-bold border shrink-0 ${
+                      item.passRate === 100
+                        ? 'text-[#22c55e] border-[#22c55e]/40'
+                        : item.passRate > 0
+                        ? 'text-[#e5a93c] border-[#e5a93c]/40'
+                        : 'text-[#ff4d2e] border-[#ff4d2e]/40'
+                    }`}
+                  >
+                    {item.passRate}% [{item.passed}/{item.total}]
+                  </span>
+                </div>
+              ))}
+            </div>
+          </LabCard>
         </div>
       )}
 
-      {/* Reports Table */}
-      <div className="bg-slate-800/50 rounded-xl border border-slate-700 shadow-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-700 bg-slate-800/80">
-          <h2 className="text-lg font-bold text-slate-200">Recent Test Runs</h2>
-        </div>
+      {/* Historical Audit Table */}
+      <LabCard
+        title="CRYPTOGRAPHIC AUDIT LOGS"
+        subtitle="Chronological audit records of all simulated and live MOSIP protocol verification runs"
+      >
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-300">
+          <table className="w-full text-left text-xs font-mono text-[#8a919e]">
             <caption className="sr-only">Recent test runs with outcome and error details</caption>
-            <thead className="text-xs text-slate-400 uppercase bg-slate-900/50 border-b border-slate-700">
+            <thead className="text-[10px] uppercase tracking-wider text-[#535965] bg-[#090a0c] border-b border-[#ffffff14]">
               <tr>
-                <th scope="col" className="px-6 py-3">Date</th>
-                <th scope="col" className="px-6 py-3">Format</th>
-                <th scope="col" className="px-6 py-3">Issuer / Wallet / Verifier</th>
-                <th scope="col" className="px-6 py-3">Outcome</th>
-                <th scope="col" className="px-6 py-3">Error (if any)</th>
+                <th scope="col" className="px-3 py-2.5">TIMESTAMP</th>
+                <th scope="col" className="px-3 py-2.5">FORMAT</th>
+                <th scope="col" className="px-3 py-2.5">PROTOCOL VECTOR</th>
+                <th scope="col" className="px-3 py-2.5">VERDICT</th>
+                <th scope="col" className="px-3 py-2.5">DIAGNOSTIC</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-[#ffffff0a]">
               {reports.map((r) => (
-                <tr key={r.flow_id} className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">{new Date(r.created_at).toLocaleString()}</td>
-                  <td className="px-6 py-4 font-medium">{r.format}</td>
-                  <td className="px-6 py-4 text-xs text-slate-400 space-y-1">
-                    <div>I: <span className="text-slate-300">{r.issuer}</span></div>
-                    <div>W: <span className="text-slate-300">{r.wallet}</span></div>
-                    <div>V: <span className="text-slate-300">{r.verifier}</span></div>
+                <tr key={r.flow_id} className="hover:bg-[#ffffff05] transition-colors">
+                  <td className="px-3 py-2.5 text-[#535965] whitespace-nowrap">
+                    {new Date(r.created_at).toLocaleTimeString()}
                   </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                      r.outcome === 'pass' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
-                    }`}>
-                      {r.outcome.toUpperCase()}
+                  <td className="px-3 py-2.5 font-bold text-[#f0f2f5]">{r.format}</td>
+                  <td className="px-3 py-2.5 text-[#8a919e]">
+                    <span>{r.issuer}</span>
+                    <span className="text-[#535965] mx-1">→</span>
+                    <span className="text-[#e5a93c]">{r.wallet}</span>
+                    <span className="text-[#535965] mx-1">→</span>
+                    <span>{r.verifier}</span>
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <span
+                      className={`inline-block px-1.5 py-0.2 text-[10px] font-bold border uppercase ${
+                        r.outcome === 'pass'
+                          ? 'text-[#22c55e] border-[#22c55e]/40'
+                          : 'text-[#ff4d2e] border-[#ff4d2e]/40'
+                      }`}
+                    >
+                      {r.outcome}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-xs font-mono text-red-300">
-                    {r.error_code || '-'}
+                  <td className="px-3 py-2.5 text-[10px]">
+                    {r.error_code ? (
+                      <span className="text-[#ff4d2e] font-mono">[{r.error_code}]</span>
+                    ) : (
+                      <span className="text-[#535965]">—</span>
+                    )}
                   </td>
                 </tr>
               ))}
               {reports.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                  <td colSpan={5} className="px-4 py-8 text-center text-[#535965] font-mono">
                     No reports found. Run a test to generate data!
                   </td>
                 </tr>
@@ -179,7 +291,7 @@ const Dashboard: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
+      </LabCard>
     </div>
   );
 };

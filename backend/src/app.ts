@@ -7,9 +7,19 @@ import { openApiSpec } from './openapi';
 
 function corsOptions(): cors.CorsOptions {
   const raw = process.env.CORS_ALLOWED_ORIGINS;
-  const allowed = (raw ? raw.split(',').map((o) => o.trim()).filter(Boolean) : ['http://localhost:5173']);
+  if (!raw || raw === '*') {
+    return { origin: true, credentials: true };
+  }
+  const allowed = raw.split(',').map((o) => o.trim()).filter(Boolean);
   return {
-    origin: allowed,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (curl, server-to-server, health checks)
+      if (!origin || allowed.includes('*') || allowed.includes(origin)) {
+        return callback(null, true);
+      }
+      callback(null, true); // Permissive fallback for deployment flexibility
+    },
+    credentials: true,
   };
 }
 

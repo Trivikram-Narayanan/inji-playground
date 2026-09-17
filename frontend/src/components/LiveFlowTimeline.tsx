@@ -1,25 +1,13 @@
 import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { CheckCircle2, Circle, Loader2, QrCode, Smartphone, Copy, Check, GitCommit, List } from 'lucide-react';
+import { CheckCircle2, Circle, Loader2, Copy, Check, List, Play } from 'lucide-react';
 import SequenceDiagram from './SequenceDiagram';
+import type { FlowStatus, FlowEvent } from '../types';
+import { TERMINAL_STATUSES, PROTOCOL_STEPS } from '../types';
 
-export type FlowEvent = {
-  id: string;
-  step: string;
-  actor: string;
-  timestamp: string;
-  payload: any;
-  status: 'success' | 'pending' | 'error';
-};
 
-export type FlowStatus = {
-  id: string;
-  status: string;
-  mode?: string;
-  result?: string;
-  offer?: any;
-  events: FlowEvent[];
-};
+export { TERMINAL_STATUSES };
+export type { FlowStatus, FlowEvent };
 
 interface LiveFlowTimelineProps {
   flow: FlowStatus | null;
@@ -29,18 +17,7 @@ interface LiveFlowTimelineProps {
   onViewReport: () => void;
 }
 
-export const TERMINAL_STATUSES = ['VERIFIED_VALID', 'VERIFIED_INVALID', 'VERIFIED_EXPIRED', 'FAILED'];
-
-const STEPS = [
-  { id: 'credential_offer', label: 'Credential Offer Created' },
-  { id: 'token_exchange', label: 'Token Exchanged' },
-  { id: 'credential_issued', label: 'Credential Issued' },
-  { id: 'authorization_request', label: 'Presentation Requested' },
-  { id: 'presentation', label: 'Credential Presented' },
-  { id: 'verification_result', label: 'Verification Complete' },
-];
-
-const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
+export const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
   flow,
   onEventClick,
   onAdvanceFlow,
@@ -53,135 +30,128 @@ const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
 
   if (!flow) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-slate-500 border-2 border-dashed border-slate-700 rounded-lg p-6 h-full">
-        <p>Run a flow to see timeline & sequence diagram</p>
+      <div className="flex-1 flex flex-col items-center justify-center text-[#535965] border border-dashed border-[#ffffff14] p-8 h-full bg-[#090a0c] font-mono text-xs">
+        <div className="w-10 h-10 border border-[#ffffff14] flex items-center justify-center mb-3 text-[#8a919e]">
+          <List size={18} />
+        </div>
+        <p className="text-[#8a919e] font-bold">AWAITING EXPERIMENT INITIALIZATION</p>
+        <p className="text-[#535965] mt-1">Configure participant vectors above and launch experiment</p>
       </div>
     );
   }
 
-  // Determine current active step based on events
   const completedStepIds = flow.events.filter((e) => e.status === 'success').map((e) => e.step);
 
-  // Construct standard deep-links for same-device simulation
   const deepLinkUri = flow.offer
     ? `openid-credential-offer://?credential_offer=${encodeURIComponent(JSON.stringify(flow.offer))}`
     : `openid-credential-offer://`;
-  const injiAppScheme = flow.offer
-    ? `inji://credential-offer?data=${encodeURIComponent(JSON.stringify(flow.offer))}`
-    : `inji://`;
 
   const handleCopyLink = () => {
+
     navigator.clipboard.writeText(deepLinkUri);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
+  const isTerminal = flow.status ? TERMINAL_STATUSES.includes(flow.status as any) : false;
+
   return (
-    <div className="flex flex-col gap-5 h-full">
-      {/* Top View Selector: Step List vs Interactive Sequence Diagram */}
-      <div className="flex items-center justify-between border-b border-slate-700/60 pb-3">
-        <div className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-lg border border-slate-800 text-xs">
+    <div className="flex flex-col gap-4 h-full">
+      {/* View Switcher: Step Timeline vs Sequence Diagram */}
+      <div className="flex items-center justify-between border-b border-[#ffffff14] pb-3">
+        <div className="flex items-center gap-2 font-mono text-xs">
           <button
             onClick={() => setViewMode('list')}
             aria-pressed={viewMode === 'list'}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${
+            className={`px-2.5 py-1 border rounded-none transition-colors ${
               viewMode === 'list'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                ? 'bg-[#e5a93c] border-[#e5a93c] text-[#090a0c] font-bold'
+                : 'bg-[#090a0c] border-[#ffffff14] text-[#8a919e] hover:text-[#f0f2f5]'
             }`}
           >
-            <List size={14} aria-hidden="true" />
-            Step Timeline
+            [TIMELINE]
           </button>
           <button
             onClick={() => setViewMode('diagram')}
             aria-pressed={viewMode === 'diagram'}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${
+            className={`px-2.5 py-1 border rounded-none transition-colors ${
               viewMode === 'diagram'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                ? 'bg-[#e5a93c] border-[#e5a93c] text-[#090a0c] font-bold'
+                : 'bg-[#090a0c] border-[#ffffff14] text-[#8a919e] hover:text-[#f0f2f5]'
             }`}
           >
-            <GitCommit size={14} aria-hidden="true" />
-            Mermaid Sequence Diagram
+            [SEQUENCE_GRAPH]
           </button>
         </div>
 
-        <span className="text-xs text-slate-400">
-          Steps: <span className="text-indigo-400 font-semibold">{completedStepIds.length}</span>/6
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-mono text-[#8a919e]">
+            STEPS: <span className="text-[#e5a93c] font-bold">{completedStepIds.length}</span>/6
+          </span>
+          {flow.mode === 'simulated' && !isTerminal && (
+            <button
+              onClick={onAdvanceFlow}
+              disabled={isAdvancing}
+              className="flex items-center gap-1.5 px-3 py-1 bg-transparent hover:bg-[#ffffff08] border border-[#ffffff1f] text-[#f0f2f5] rounded-none text-xs font-mono font-bold disabled:opacity-50 transition-colors"
+              title="Advance step manually in Simulated Mode"
+            >
+              {isAdvancing ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />}
+              ADVANCE
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* If we have an offer and it's the latest step, show Cross-device QR or Same-device Deep Link */}
+      {/* Credential Offer Hand-off */}
       {flow.status === 'OFFER_CREATED' && flow.offer && flow.mode !== 'real' && (
-        <div className="bg-slate-900/90 rounded-lg p-5 flex flex-col items-center justify-center border border-indigo-500/30 shadow-[0_0_20px_rgba(99,102,241,0.1)]">
-          {/* Mode Switcher: Cross-Device vs Same-Device */}
-          <div className="flex items-center gap-2 mb-4 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
+        <div className="bg-[#090a0c] p-4 border border-[#ffffff14] flex flex-col items-center justify-center">
+          <div className="flex items-center gap-2 mb-3 font-mono text-xs">
             <button
               onClick={() => setDeviceMode('cross-device')}
               aria-pressed={deviceMode === 'cross-device'}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${
-                deviceMode === 'cross-device' ? 'bg-slate-800 text-indigo-300 border border-slate-700' : 'text-slate-500'
+              className={`px-2.5 py-1 border rounded-none transition-colors ${
+                deviceMode === 'cross-device'
+                  ? 'bg-[#e5a93c] border-[#e5a93c] text-[#090a0c] font-bold'
+                  : 'bg-[#090a0c] border-[#ffffff14] text-[#8a919e]'
               }`}
             >
-              <QrCode size={13} aria-hidden="true" />
-              Cross-Device (QR Code)
+              CROSS-DEVICE (QR)
             </button>
             <button
               onClick={() => setDeviceMode('same-device')}
               aria-pressed={deviceMode === 'same-device'}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${
-                deviceMode === 'same-device' ? 'bg-slate-800 text-indigo-300 border border-slate-700' : 'text-slate-500'
+              className={`px-2.5 py-1 border rounded-none transition-colors ${
+                deviceMode === 'same-device'
+                  ? 'bg-[#e5a93c] border-[#e5a93c] text-[#090a0c] font-bold'
+                  : 'bg-[#090a0c] border-[#ffffff14] text-[#8a919e]'
               }`}
             >
-              <Smartphone size={13} aria-hidden="true" />
-              Same-Device (Deep-Link / Digital Credentials API)
+              SAME-DEVICE (URI)
             </button>
           </div>
 
           {deviceMode === 'cross-device' ? (
             <div className="flex flex-col items-center">
-              <p className="text-xs text-indigo-300 font-medium mb-3">Scan with Inji Wallet Mobile</p>
-              <div className="p-3 bg-white rounded-xl mb-4 shadow-md">
+              <div className="p-3 bg-white mb-3 shadow-md">
                 <QRCodeSVG
                   value={JSON.stringify(flow.offer)}
-                  size={170}
+                  size={140}
                   role="img"
-                  aria-label="QR code encoding the credential offer for the Inji Wallet Mobile app to scan"
+                  aria-label="QR code encoding credential offer"
                 />
               </div>
+              <p className="text-[11px] text-[#8a919e] font-mono">Scan with Inji Wallet Mobile app</p>
             </div>
           ) : (
-            <div className="w-full max-w-md flex flex-col gap-3 mb-4">
-              <p className="text-xs text-slate-300">
-                In a same-device flow, the browser redirects directly to the wallet via custom URL scheme or W3C Digital Credentials API:
-              </p>
-              <div className="bg-slate-950 p-2.5 rounded border border-slate-800 flex items-center justify-between gap-2">
-                <code className="text-[11px] text-indigo-300 font-mono truncate">{deepLinkUri}</code>
+            <div className="w-full max-w-md flex flex-col gap-2 mb-3 font-mono">
+              <div className="bg-[#0f1115] p-2 border border-[#ffffff14] flex items-center justify-between gap-2">
+                <code className="text-[10px] text-[#e5a93c] truncate">{deepLinkUri}</code>
                 <button
                   onClick={handleCopyLink}
-                  className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs flex items-center gap-1 shrink-0"
+                  className="px-2 py-0.5 bg-[#ffffff0a] hover:bg-[#ffffff14] text-[#f0f2f5] text-xs flex items-center gap-1 shrink-0"
                 >
-                  {copiedLink ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
-                  {copiedLink ? 'Copied' : 'Copy'}
-                </button>
-              </div>
-              <div className="flex items-center gap-2">
-                <a
-                  href={injiAppScheme}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onAdvanceFlow();
-                  }}
-                  className="flex-1 text-center px-3 py-2 bg-indigo-900/50 hover:bg-indigo-900 text-indigo-300 rounded border border-indigo-500/40 text-xs font-medium"
-                >
-                  Open in Inji App (Deep Link)
-                </a>
-                <button
-                  onClick={onAdvanceFlow}
-                  className="flex-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 text-xs font-medium"
-                >
-                  Simulate Web API Call
+                  {copiedLink ? <Check size={12} className="text-[#22c55e]" /> : <Copy size={12} />}
+                  <span>{copiedLink ? 'COPIED' : 'COPY'}</span>
                 </button>
               </div>
             </div>
@@ -190,116 +160,116 @@ const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
           <button
             onClick={onAdvanceFlow}
             disabled={isAdvancing}
-            className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg font-medium transition-colors text-sm shadow-md"
+            className="px-5 py-2 bg-[#e5a93c] hover:bg-[#d4982c] text-[#090a0c] font-mono text-xs font-bold uppercase rounded-none transition-all shadow-[0_0_15px_rgba(229,169,60,0.15)] mt-1"
           >
-            {isAdvancing ? 'Simulating...' : 'Simulate Full Flow (Hackathon Mode)'}
+            {isAdvancing ? 'SIMULATING_PIPELINE...' : 'CONTINUE DISPATCH'}
           </button>
         </div>
       )}
 
+      {/* Real Mode Presentation Prompt */}
       {flow.status === 'CREDENTIAL_ISSUED' && flow.mode === 'real' && (
-        <div className="bg-slate-900 rounded-lg p-5 flex flex-col items-center justify-center border border-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.1)] gap-3">
-          <p className="text-xs text-red-300 font-medium text-center">
-            A real, signed Verifiable Credential was issued by the MOSIP Collab sandbox and is held by this BFF.
-            <br />Click below to run a real OpenID4VP presentation + cryptographic verification.
+        <div className="bg-[#090a0c] p-4 border border-[#ff4d2e]/40 flex flex-col items-center justify-center gap-3">
+          <div className="flex items-center gap-2 text-[#ff4d2e] font-mono text-xs font-bold uppercase">
+            <span className="w-1.5 h-1.5 bg-[#ff4d2e] animate-ping" />
+            MOSIP CREDENTIAL ISSUED :: AWAITING VERIFICATION
+          </div>
+          <p className="text-xs text-[#8a919e] text-center max-w-md font-sans">
+            Cryptographic verifiable credential signed by MOSIP sandbox. Proceed to presentation and trust validation.
           </p>
           <button
             onClick={onAdvanceFlow}
             disabled={isAdvancing}
-            className="px-5 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-lg font-medium transition-colors text-xs"
+            className="px-5 py-2 bg-[#ff4d2e] hover:bg-[#e03d20] text-white font-mono text-xs font-bold uppercase rounded-none transition-colors"
           >
-            {isAdvancing ? 'Verifying...' : 'Present & Verify (Real)'}
+            {isAdvancing ? 'VALIDATING...' : 'PRESENT & VERIFY (REAL)'}
           </button>
         </div>
       )}
 
-      {flow.status === 'FAILED' && (
-        <div role="alert" className="p-4 rounded-lg font-bold text-center border bg-red-500/20 text-red-400 border-red-500/50">
-          <div className="text-base">⚠️ Real Sandbox Call Failed</div>
-          <p className="text-xs font-normal text-red-300/80 mt-1.5">
-            The MOSIP Collab sandbox didn't complete this step. Check the Protocol Inspector for the raw error, or retry in Simulated Mode.
-          </p>
-        </div>
-      )}
-
-      {/* Result Banner if flow is complete */}
-      {['VERIFIED_VALID', 'VERIFIED_INVALID', 'VERIFIED_EXPIRED'].includes(flow.status) && (
+      {/* Terminal Results Banner */}
+      {isTerminal && (
         <div
           role="status"
-          className={`p-4 rounded-lg font-bold text-center border flex flex-col items-center justify-center gap-2.5 ${
+          className={`p-3.5 border flex flex-col sm:flex-row items-center justify-between gap-3 font-mono text-xs ${
             flow.result === 'valid'
-              ? 'bg-green-500/20 text-green-400 border-green-500/50'
+              ? 'bg-[#22c55e]/10 border-[#22c55e]/40 text-[#22c55e]'
               : flow.result === 'invalid'
-              ? 'bg-red-500/20 text-red-400 border-red-500/50'
-              : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50'
+              ? 'bg-[#ff4d2e]/10 border-[#ff4d2e]/40 text-[#ff4d2e]'
+              : 'bg-[#e5a93c]/10 border-[#e5a93c]/40 text-[#e5a93c]'
           }`}
         >
-          <div className="text-base">
-            {flow.result === 'valid'
-              ? '✅ Verification Valid'
-              : flow.result === 'invalid'
-              ? '❌ Verification Invalid'
-              : '⚠️ Valid but Expired'}
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 size={16} />
+            <span className="font-bold tracking-wider">
+              {flow.result === 'valid'
+                ? 'CRYPTOGRAPHIC VERIFICATION PASSED'
+                : flow.result === 'invalid'
+                ? 'VERIFICATION REJECTED (SIGNATURE_MISMATCH)'
+                : 'CREDENTIAL EXPIRED (REVOKED_TIMESTAMP)'}
+            </span>
           </div>
           <button
             onClick={onViewReport}
-            className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs rounded-lg font-medium transition-colors border border-slate-600"
+            className="px-3 py-1 bg-transparent hover:bg-[#ffffff0a] border border-current text-xs font-bold uppercase rounded-none transition-colors"
           >
-            View Full Report
+            [VIEW CERTIFICATE]
           </button>
         </div>
       )}
 
-      {/* Main Content: Step List OR Mermaid Diagram */}
+      {/* Main Content: Step List or Mermaid Diagram */}
       {viewMode === 'diagram' ? (
         <SequenceDiagram flow={flow} onEventClick={onEventClick} />
       ) : (
-        <div className="flex-1 overflow-y-auto pr-3 space-y-3">
-          {STEPS.map((step, index) => {
+        <div className="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
+          {PROTOCOL_STEPS.map((step, index) => {
             const event = flow.events.find((e) => e.step === step.id);
             const isCompleted = event?.status === 'success';
-            const isPending = !event && (index === 0 || completedStepIds.includes(STEPS[index - 1].id));
-            const statusLabel = isCompleted ? 'completed' : isPending ? 'in progress' : 'not started';
+            const isPending = !event && (index === 0 || completedStepIds.includes(PROTOCOL_STEPS[index - 1].id));
+
             return (
               <button
                 key={step.id}
                 type="button"
                 disabled={!event}
                 onClick={() => event && onEventClick(event)}
-                aria-label={`${step.label} (${statusLabel})`}
-                className={`w-full text-left flex items-start gap-3.5 p-3.5 rounded-lg border transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${
+                className={`w-full text-left flex items-start gap-3 p-3 border rounded-none transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-[#e5a93c] ${
                   event
-                    ? 'cursor-pointer hover:bg-slate-700/50 hover:border-slate-500 active:scale-[0.99]'
-                    : 'opacity-60 grayscale cursor-default'
+                    ? 'cursor-pointer hover:bg-[#ffffff08] active:translate-y-0.5'
+                    : 'opacity-40 cursor-default'
                 } ${
                   isCompleted
-                    ? 'bg-slate-800/80 border-green-500/30'
+                    ? 'bg-[#0f1115] border-[#ffffff14]'
                     : isPending
-                    ? 'bg-indigo-900/20 border-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.1)]'
-                    : 'bg-slate-800/30 border-slate-700/50'
+                    ? 'bg-[#e5a93c]/5 border-[#e5a93c]/50'
+                    : 'bg-[#090a0c] border-[#ffffff0a]'
                 }`}
               >
                 <div className="mt-0.5">
                   {isCompleted ? (
-                    <CheckCircle2 className="text-green-400" size={18} aria-hidden="true" />
+                    <CheckCircle2 className="text-[#22c55e]" size={14} aria-hidden="true" />
                   ) : isPending ? (
-                    <Loader2 className="text-indigo-400 animate-spin" size={18} aria-hidden="true" />
+                    <Loader2 className="text-[#e5a93c] animate-spin" size={14} aria-hidden="true" />
                   ) : (
-                    <Circle className="text-slate-600" size={18} aria-hidden="true" />
+                    <Circle className="text-[#535965]" size={14} aria-hidden="true" />
                   )}
                 </div>
-                <div className="flex-1">
-                  <div
-                    className={`text-sm font-medium ${
-                      isCompleted ? 'text-slate-200' : isPending ? 'text-indigo-300' : 'text-slate-500'
-                    }`}
-                  >
-                    {step.label}
+
+                <div className="flex-1 min-w-0 font-mono">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`text-xs font-bold ${isCompleted ? 'text-[#f0f2f5]' : isPending ? 'text-[#e5a93c]' : 'text-[#535965]'}`}>
+                      {step.label}
+                    </span>
+                    <span className="text-[10px] text-[#8a919e] uppercase border border-[#ffffff14] px-1.5 py-0.2 bg-[#090a0c]">
+                      {step.actor}
+                    </span>
                   </div>
+
                   {event && (
-                    <div className="text-[11px] text-slate-400 mt-1">
-                      Actor: <span className="text-slate-300 uppercase font-semibold">{event.actor}</span> • Time:{' '}
-                      {new Date(event.timestamp).toLocaleTimeString()}
+                    <div className="text-[10px] text-[#535965] mt-1 flex items-center justify-between">
+                      <span>EVENT_ID: #{event.id.slice(0, 8)}</span>
+                      <span>{new Date(event.timestamp).toLocaleTimeString()}</span>
                     </div>
                   )}
                 </div>

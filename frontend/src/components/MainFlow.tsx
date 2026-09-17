@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import Selector, { type FlowConfig } from './Selector';
-import LiveFlowTimeline, { type FlowStatus, type FlowEvent, TERMINAL_STATUSES } from './LiveFlowTimeline';
+import Selector from './Selector';
+import LiveFlowTimeline from './LiveFlowTimeline';
 import ProtocolInspector from './ProtocolInspector';
-import ReportView, { type InteropReport } from './ReportView';
+import ReportView from './ReportView';
 import { useFlowStream } from '../hooks/useFlowStream';
+import { api } from '../api/client';
+import type { FlowConfig, FlowStatus, FlowEvent, InteropReport } from '../types';
+import { TERMINAL_STATUSES } from '../types';
+import { LabCard, BracketBadge } from './ui/LabPrimitives';
+import { AlertTriangle } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:3000/api';
-
-const MainFlow: React.FC = () => {
+export const MainFlow: React.FC = () => {
   const [flow, setFlow] = useState<FlowStatus | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<FlowEvent | null>(null);
   const [report, setReport] = useState<InteropReport | null>(null);
@@ -19,8 +21,8 @@ const MainFlow: React.FC = () => {
 
   const fetchReport = async (flowId: string) => {
     try {
-      const reportRes = await axios.get(`${API_BASE}/flows/${flowId}/report`);
-      setReport(reportRes.data);
+      const data = await api.getFlowReport(flowId);
+      setReport(data);
     } catch (err) {
       console.error('Failed to fetch report:', err);
     }
@@ -28,12 +30,12 @@ const MainFlow: React.FC = () => {
 
   const fetchFlowData = async (flowId: string) => {
     try {
-      const [statusRes, eventsRes] = await Promise.all([
-        axios.get(`${API_BASE}/flows/${flowId}`),
-        axios.get(`${API_BASE}/flows/${flowId}/events`),
+      const [statusData, eventsData] = await Promise.all([
+        api.getFlow(flowId),
+        api.getFlowEvents(flowId),
       ]);
-      setFlow({ ...statusRes.data, events: eventsRes.data.events });
-      if (TERMINAL_STATUSES.includes(statusRes.data.status)) {
+      setFlow({ ...statusData, events: eventsData.events });
+      if (TERMINAL_STATUSES.includes(statusData.status as any)) {
         await fetchReport(flowId);
       }
     } catch (err) {
@@ -41,10 +43,6 @@ const MainFlow: React.FC = () => {
     }
   };
 
-  // Live updates via SSE once a flow exists - covers Simulated Mode's step-by-step
-  // pacing in full, and Real Mode's presentation/verification phase (Real Mode's
-  // issuance phase completes server-side before the stream connects, so that part
-  // arrives via the initial fetchFlowData call instead).
   useFlowStream(flow?.id ?? null, (update) => {
     if (update.type === 'event') {
       setFlow((prev) => {
@@ -53,7 +51,7 @@ const MainFlow: React.FC = () => {
       });
     } else if (update.type === 'status') {
       setFlow((prev) => (prev ? { ...prev, status: update.data.status, result: update.data.result ?? prev.result } : prev));
-      if (TERMINAL_STATUSES.includes(update.data.status) && flow?.id) {
+      if (TERMINAL_STATUSES.includes(update.data.status as any) && flow?.id) {
         fetchReport(flow.id);
       }
     }
@@ -66,10 +64,9 @@ const MainFlow: React.FC = () => {
       setReport(null);
       setShowReport(false);
       setStartError(null);
-      const res = await axios.post(`${API_BASE}/flows`, config);
-      const { flowId } = res.data;
+      const res = await api.createFlow(config);
+      const { flowId } = res;
 
-      // Initial fetch
       await fetchFlowData(flowId);
     } catch (error: any) {
       console.error('Error starting flow:', error);
@@ -83,8 +80,6 @@ const MainFlow: React.FC = () => {
     }
   };
 
-  // Auto-dismiss after a while, but leave the manual close button as the accessible fallback
-  // (screen-reader/low-vision users shouldn't have to race a timer to read the error).
   useEffect(() => {
     if (!startError) return;
     const timer = setTimeout(() => setStartError(null), 8000);
@@ -95,7 +90,7 @@ const MainFlow: React.FC = () => {
     if (!flow?.id) return;
     try {
       setIsAdvancing(true);
-      await axios.post(`${API_BASE}/flows/${flow.id}/advance`);
+      await api.advanceFlow(flow.id);
       await fetchFlowData(flow.id);
     } catch (error) {
       console.error('Error advancing flow:', error);
@@ -106,30 +101,54 @@ const MainFlow: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Top: Selector UI */}
-      <section className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6 backdrop-blur-sm shadow-xl">
-        <Selector onRunTest={handleRunTest} />
-      </section>
+      {/* Top: Section Header & Selector Card */}
+      <LabCard
+        title="EXPERIMENT RUNTIME MATRIX"
+        subtitle="Specify OpenID4VC participants, credential profile, and adversarial mutations"
+        badge={
+          <BracketBadge variant={flow?.mode === 'real' ? 'crimson' : 'gold'}>
+            {flow?.mode === 'real' ? 'MOSIP LIVE' : 'SIMULATION READY'}
+          </BracketBadge>
+        }
+      >
+        <Selector onRunTest={handleRunTest} isLoading={isLoading} />
+      </LabCard>
 
+      {/* Start Error Banner */}
       {startError && (
-        <div role="alert" className="animate-slide-in-fade bg-red-500/10 border border-red-500/40 text-red-300 rounded-lg px-4 py-3 text-sm flex items-start justify-between gap-4">
-          <span>{startError}</span>
-          <button onClick={() => setStartError(null)} aria-label="Dismiss error" className="text-red-400 hover:text-red-200 text-lg leading-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400">&times;</button>
+        <div role="alert" className="animate-slide-in-fade bg-[#ff4d2e]/10 border border-[#ff4d2e]/40 text-[#ff4d2e] p-4 text-xs font-mono flex items-start justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle size={16} className="shrink-0" />
+            <div>
+              <span className="font-bold uppercase tracking-wider block">EXECUTION_ERROR :: TRANSACTION_ABORTED</span>
+              <span className="text-[#f0f2f5] mt-0.5 block font-sans">{startError}</span>
+            </div>
+          </div>
+          <button
+            onClick={() => setStartError(null)}
+            aria-label="Dismiss error"
+            className="text-[#ff4d2e] hover:text-white text-base leading-none"
+          >
+            &times;
+          </button>
         </div>
       )}
 
-      {/* Middle: Live Flow & Bottom: Protocol Inspector */}
+      {/* Split Console: Live Timeline & Protocol Inspector */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[500px]">
-        <section className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6 backdrop-blur-sm shadow-xl flex flex-col" aria-labelledby="live-timeline-heading">
-          <h2 id="live-timeline-heading" className="text-lg font-semibold mb-4 text-slate-200 flex items-center justify-between">
-            <span className="flex items-center gap-2">
-              Live Timeline
-              {flow?.mode === 'real' && (
-                <span className="text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/40 rounded-full px-2 py-0.5 tracking-wide">LIVE</span>
-              )}
-            </span>
-            {isLoading && <span role="status" className="text-sm text-indigo-400">Starting...</span>}
-          </h2>
+        <LabCard
+          id="live-timeline-section"
+          title="PROTOCOL TRANSACTION TIMELINE"
+          subtitle="Real-time message transactions and state transitions across OpenID4VCI & OpenID4VP"
+          badge={
+            flow?.mode === 'real' ? (
+              <BracketBadge variant="crimson" pulse>MOSIP STREAM</BracketBadge>
+            ) : (
+              <BracketBadge variant="gold">HERMETIC SSE</BracketBadge>
+            )
+          }
+          className="flex flex-col"
+        >
           <LiveFlowTimeline
             flow={flow}
             onEventClick={setSelectedEvent}
@@ -137,12 +156,23 @@ const MainFlow: React.FC = () => {
             isAdvancing={isAdvancing}
             onViewReport={() => setShowReport(true)}
           />
-        </section>
+        </LabCard>
 
-        <section className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6 backdrop-blur-sm shadow-xl flex flex-col" aria-labelledby="protocol-inspector-heading">
-          <h2 id="protocol-inspector-heading" className="text-lg font-semibold mb-4 text-slate-200">Protocol Inspector</h2>
+        <LabCard
+          id="protocol-inspector-section"
+          title="CRYPTOGRAPHIC PROTOCOL INSPECTOR"
+          subtitle="Direct inspection of signatures, claims, nonces, and proof-of-possession headers"
+          badge={
+            selectedEvent ? (
+              <BracketBadge variant="gold">{selectedEvent.actor}</BracketBadge>
+            ) : (
+              <BracketBadge variant="dim">STANDBY</BracketBadge>
+            )
+          }
+          className="flex flex-col"
+        >
           <ProtocolInspector event={selectedEvent} />
-        </section>
+        </LabCard>
       </div>
 
       {showReport && report && (

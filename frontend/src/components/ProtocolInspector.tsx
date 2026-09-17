@@ -1,39 +1,86 @@
-import React from 'react';
-import type { FlowEvent } from './LiveFlowTimeline';
+import React, { useState } from 'react';
+import { Copy, Check, Terminal, FileCode } from 'lucide-react';
+import type { FlowEvent } from '../types';
 
 interface ProtocolInspectorProps {
   event: FlowEvent | null;
 }
 
-const ProtocolInspector: React.FC<ProtocolInspectorProps> = ({ event }) => {
+export const ProtocolInspector: React.FC<ProtocolInspectorProps> = ({ event }) => {
+  const [copied, setCopied] = useState(false);
+
   if (!event) {
     return (
-      <div className="flex-1 flex items-center justify-center text-slate-500 border-2 border-dashed border-slate-700 rounded-lg p-6 bg-slate-900/50 h-full">
-        Select an event from the timeline to inspect payload
+      <div className="flex-1 flex flex-col items-center justify-center text-[#535965] border border-dashed border-[#ffffff14] p-8 bg-[#090a0c] h-full font-mono text-xs">
+        <div className="w-10 h-10 border border-[#ffffff14] flex items-center justify-center mb-3 text-[#8a919e]">
+          <Terminal size={18} />
+        </div>
+        <p className="text-[#8a919e] font-bold">STANDBY // NO PAYLOAD SELECTED</p>
+        <p className="text-[#535965] mt-1 font-sans">Select any transaction step on the timeline to inspect raw cryptographic payload</p>
       </div>
     );
   }
 
+  let parsedPayload: any = null;
+  let parseError = false;
+  try {
+    parsedPayload = typeof event.payload === 'string' ? JSON.parse(event.payload) : event.payload;
+  } catch {
+    parseError = true;
+  }
+
+  const handleCopy = () => {
+    const raw = typeof event.payload === 'string' ? event.payload : JSON.stringify(event.payload, null, 2);
+    navigator.clipboard.writeText(raw);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <div className="flex flex-col h-full bg-slate-900/80 rounded-lg border border-slate-700 overflow-hidden">
-      <div className="px-4 py-3 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
-        <div>
-          <h3 className="font-medium text-slate-200">{event.step}</h3>
-          <p className="text-xs text-slate-400 mt-0.5">Actor: {event.actor}</p>
+    <div className="flex flex-col h-full bg-[#090a0c] border border-[#ffffff14] overflow-hidden font-mono text-xs">
+      {/* Top Header */}
+      <div className="px-4 py-2.5 border-b border-[#ffffff14] bg-[#0f1115] flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <FileCode size={14} className="text-[#e5a93c]" />
+          <span className="text-[#f0f2f5] font-bold truncate">{event.step}</span>
+          <span className="text-[#535965] text-[10px]">:: {event.actor}</span>
         </div>
-        <span className={`px-2.5 py-1 text-xs rounded-full font-medium ${
-          event.status === 'success' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-          event.status === 'error' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-          'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-        }`}>
-          {event.status.toUpperCase()}
-        </span>
+
+        <div className="flex items-center gap-2">
+          <span className={`text-[10px] uppercase font-bold border px-1.5 py-0.2 ${
+            event.status === 'success'
+              ? 'text-[#22c55e] border-[#22c55e]/40'
+              : event.status === 'error'
+              ? 'text-[#ff4d2e] border-[#ff4d2e]/40'
+              : 'text-[#e5a93c] border-[#e5a93c]/40'
+          }`}>
+            [{event.status}]
+          </span>
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-1 px-2 py-0.5 border border-[#ffffff14] hover:border-[#ffffff2e] text-[#8a919e] hover:text-[#f0f2f5] text-xs transition-colors"
+          >
+            {copied ? <Check size={11} className="text-[#22c55e]" /> : <Copy size={11} />}
+            <span>{copied ? 'COPIED' : 'COPY'}</span>
+          </button>
+        </div>
       </div>
-      
-      <div className="flex-1 overflow-auto p-4 custom-scrollbar" tabIndex={0} aria-label={`Raw payload for ${event.step}`}>
-        <pre className="text-sm text-slate-300 font-mono whitespace-pre-wrap break-words">
-          {JSON.stringify(JSON.parse(event.payload), null, 2)}
-        </pre>
+
+      {/* Code Inspector Area */}
+      <div className="flex-1 overflow-auto p-4 custom-scrollbar bg-[#090a0c] text-[#8a919e]" tabIndex={0} aria-label={`Payload for ${event.step}`}>
+        {parseError ? (
+          <pre className="text-[#ff4d2e] whitespace-pre-wrap">{String(event.payload)}</pre>
+        ) : (
+          <pre className="text-xs font-mono leading-relaxed text-[#f0f2f5]">
+            <code>{JSON.stringify(parsedPayload, null, 2)}</code>
+          </pre>
+        )}
+      </div>
+
+      {/* Footer telemetry */}
+      <div className="px-3 py-1.5 bg-[#0f1115] border-t border-[#ffffff0f] text-[10px] text-[#535965] flex items-center justify-between">
+        <span>HASH_ID: {event.id}</span>
+        <span className="text-[#8a919e]">{new Date(event.timestamp).toLocaleTimeString()}</span>
       </div>
     </div>
   );
