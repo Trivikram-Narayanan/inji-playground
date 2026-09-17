@@ -1,24 +1,51 @@
-# Inji Interoperability Playground
+# INJI_INTEROP // CONSOLE
+### Cryptographic Protocol Forensics & Interoperability Playground for MOSIP and Global VC Ecosystems
 
-The **Inji Interoperability Playground** is a comprehensive, open-source testing sandbox designed to simulate and debug cross-module Verifiable Credential (VC) flows within the MOSIP ecosystem (and external ecosystems). It serves as a visual wrapper around Inji Certify and Inji Verify logic, providing real-time protocol transparency.
+[![Frontend Deployment](https://img.shields.io/badge/Frontend-Vercel-black?style=flat-square&logo=vercel)](https://inji-playground-mosip.vercel.app)
+[![Backend API](https://img.shields.io/badge/Backend-Render-46E3B7?style=flat-square&logo=render)](https://inji-playground.onrender.com)
+[![API Docs](https://img.shields.io/badge/Swagger-OpenAPI_3.0-85EA2D?style=flat-square&logo=swagger)](https://inji-playground.onrender.com/api/docs)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg?style=flat-square)](LICENSE)
 
-## Architecture
+---
 
-- **Frontend**: Built with React, TypeScript, Vite, and TailwindCSS. The UI provides a configuration selector, live protocol timeline, protocol inspector, and a historical reporting dashboard.
-- **Backend (BFF)**: Built with Node.js, Express, and SQLite. Acts as an orchestrator that simulates OpenID4VCI (Issuance) and OpenID4VP (Presentation & Verification) flows. It persists test states (`TestRun`), events (`ProtocolEvent`), and reports (`Report`).
+## 🌐 Live Deployments
 
+| Component | Platform | Live URL | Status |
+| :--- | :--- | :--- | :--- |
+| **Frontend Console** | Vercel | [**inji-playground-mosip.vercel.app**](https://inji-playground-mosip.vercel.app) | 🟢 Operational |
+| **Backend BFF API** | Render | [**inji-playground.onrender.com**](https://inji-playground.onrender.com) | 🟢 Operational |
+| **Interactive API Docs** | Swagger UI | [**inji-playground.onrender.com/api/docs**](https://inji-playground.onrender.com/api/docs) | 🟢 Live |
+| **API Health Check** | Render | [**inji-playground.onrender.com/health**](https://inji-playground.onrender.com/health) | 🟢 `{"status":"ok"}` |
 
-## Features
+---
 
-- **Component Mocking**: Mix and match `Inji Certify`, `Inji Wallet`, `Inji Verify`, and `External Mocks` for true cross-ecosystem testing.
-- **Format Support**: Test interactions with W3C VC JSON-LD, SD-JWT VC, and mDoc.
-- **Live Timeline & Animated Mermaid Sequence Diagram**: Visually tracks the credential lifecycle from Offer to Verification Result, with interactive Mermaid.js protocol diagrams.
-- **Same-Device & Cross-Device Flows**: Test both QR-code cross-device scans and direct `openid4vp://` / `inji://` same-device deep-link handoffs.
-- **Protocol Inspector**: Allows developers to view the beautifully syntax-highlighted raw JSON payloads (Token Exchanges, Submissions) for each step of the flow.
-- **Tamper Mode (Negative Testing)**: Intentionally corrupt claims, invalidate signatures, or expire credentials to test the verifier's resilience.
-- **Interoperability Reporting**: At the end of every flow, an Interoperability Report is generated, logging execution details, durations, outcomes, and error codes.
-- **Historical Dashboard**: See aggregated pass/fail rates, total runs, most common errors, and view a history of all executed scenarios.
-- **Automated CI Matrix Runner**: GitHub Actions workflow that executes all 13 format × tamper scenarios and generates the compatibility matrix.
+## 🔬 Overview
+
+The **Inji Interoperability Playground** (`INJI_INTEROP // CONSOLE`) is an interactive protocol laboratory and forensic console designed to simulate, inspect, benchmark, and tamper-test cross-module **Verifiable Credential (VC)** flows across the MOSIP identity ecosystem (Inji Certify, Inji Wallet, Inji Verify) and external reference implementations.
+
+It exposes real-time protocol mechanics across the **OpenID4VCI** (Issuance) and **OpenID4VP** (Presentation & Verification) specifications with sub-second telemetry, raw cryptographic artifact inspection, and deep adversarial tamper resilience testing.
+
+---
+
+## ⚡ Core Capabilities
+
+- **3D Cryptographic Protagonist**: Interactive physical credential card rendered in React Three Fiber (R3F) with extruded geometry, embossed microchip, metallic materials, and continuous autonomous turntable dynamics.
+- **The 5-Beat Protocol Pipeline**:
+  - `01 // DISPATCH`: Credential Offer binding (`OpenID4VCI`)
+  - `02 // PROOF_BIND`: Ephemeral key exchange & DPoP proof of possession (`OAuth 2.0`)
+  - `03 // QUERY`: Relying party DCQL challenge queries (`OpenID4VP`)
+  - `04 // PRESENT`: Salted hash selective disclosure presentation (`SD-JWT / VP`)
+  - `05 // VERDICT`: Issuer digital signature, trust root, & revocation bitstring audit
+- **Genuine Multi-Format Cryptographic Suites**:
+  - **W3C VC (JSON-LD)**: `Ed25519Signature2020` / `did:key` with live MOSIP Collab sandbox issuance.
+  - **SD-JWT VC (IETF)**: Selective disclosure digests with salted disclosures and replay-guard binding.
+  - **mDoc / mDL (ISO 18013-5)**: Binary CBOR `IssuerSigned` + `COSE_Sign1` (ES256) mobile credentials.
+- **Dual-Mode Execution**:
+  - **Simulated Mode**: Fast, in-memory cryptographic state machine testing cross-ecosystem matrix scenarios.
+  - **Real Mode**: Live headless OIDC orchestration against the public MOSIP Collab sandbox (`api.collab.mosip.net`, Mimoto, eSignet, and Inji Certify).
+- **Adversarial Tamper Testing**: Invalidate digital signatures, inject expired validity windows, corrupt claim values, or simulate cross-ecosystem `DID_METHOD_GAP` failures.
+- **Real-Time Protocol Inspector**: Live syntax-highlighted inspect drawer for raw tokens, DPoP headers, DCQL requests, and verified payloads.
+- **Historical Observatory & Audit Logs**: Interactive pass/fail rate breakdowns, error code distributions, and markdown matrix exports.
 
 ## Getting Started
 
