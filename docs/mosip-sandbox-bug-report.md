@@ -51,3 +51,18 @@ Not confirmed, but the symptom (a value written by one request and unreadable by
 - Reproduced against: `esignet-mosipid.collab.mosip.net` (issuer `Mosip`) and `esignet-mock.collab.mosip.net` (issuer `Farmer`)
 - Client: headless (non-browser) OpenID4VCI client conforming to the same `oauth-details`/`send-otp`/`v2/authenticate`/`auth-code` sequence Inji Wallet/Web uses
 - Related community reports: this may be the same class of issue as reports of general Collab sandbox instability on the MOSIP community forum (e.g. threads on failing to deploy/use inji-certify via the sandbox) — not confirmed to be the same underlying bug, but the symptom family (transactions/state not surviving between calls) is similar.
+
+
+---
+
+**Update 2026-10-25 - re-verified, and a cookie/replica explanation ruled out**
+
+Re-ran the full sequence from a clean client to check whether this was something on our side:
+
+- **30 of 30 fresh attempts failed** with `invalid_transaction` (15 against `esignet-mosipid.collab.mosip.net`, 15 against `esignet-mock.collab.mosip.net`). Each attempt did a new XSRF warm-up, a new `oauth-details`, then `send-otp` with the returned `transactionId`.
+- **No stickiness cookie.** The only `Set-Cookie` the server ever returns is `XSRF-TOKEN`, on the 403 warm-up response. `oauth-details` and `send-otp` set no cookies. A full cookie jar is therefore equivalent to what we already send, so a dropped affinity cookie does not explain this.
+- **Not a per-replica miss.** If the cache were per-pod behind a load balancer, some fraction of attempts would land on the right pod. 0 of 30 did, on two separate deployments, which points to the transaction never being readable by `send-otp`, not to random routing.
+- `oauth-details` itself succeeds and returns a real 43-character `transactionId`, `credentialScopes`, and client config, so the client, PKCE values, and `clientId` are accepted. Only the second call fails.
+- Responses pass through an `envoy` / `nginx` front (`x-envoy-upstream-service-time`, `server: nginx`).
+
+The earlier suggestion (non-shared in-memory cache) is still a guess; the new evidence only narrows it. It would help if a MOSIP maintainer could confirm whether `send-otp` on the Collab sandbox now expects an additional field or header.

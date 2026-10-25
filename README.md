@@ -90,11 +90,11 @@ The frontend will start at `http://localhost:5173`.
 2. Select your desired **Issuer**, **Wallet**, and **Verifier**.
 3. Choose the **Format** (e.g., W3C VC JSON-LD).
 4. Optionally toggle **Tamper Mode** for negative testing.
-5. Click **Run Test**.
-6. When the "Credential Offer Created" step appears, click **Simulate Full Flow (Hackathon Mode)**.
+5. Click **Run Experiment**.
+6. When the "Credential Offer Created" step appears, click **Advance** to run the rest of the flow (token exchange, issuance, presentation, verification).
 7. Click any event in the timeline (like "Token Exchanged") to inspect the payload in the **Protocol Inspector**.
-8. At the end of the flow, click **View Full Report** to see the final outcome.
-9. Click **Dashboard** in the top navigation bar to see your historical execution stats.
+8. At the end of the flow, click **View Certificate** to see the final outcome and export it as JSON.
+9. Open **02_Observatory** in the top navigation bar to see your historical execution stats.
 
 ## Real Mode
 
@@ -103,7 +103,7 @@ Toggle **Real Mode** in the Selector to run against the real, publicly-hosted **
 - **Issuance**: a genuine headless OIDC login (mock UIN `5860356276`, mock OTP `111111`) against the format's real eSignet host, token exchange via the real `api.collab.mosip.net` Mimoto BFF, and a real signed credential from the format's real Certify host. Every raw request/response is captured in the Protocol Inspector.
 - **Verification**: this BFF acts as its own OpenID4VP relying party and runs real cryptographic verification against the credential it just received. Tamper Mode genuinely mutates the signed/encoded credential before verification, so failures are real, not scripted.
 - **Format coverage**: verified against the live sandbox — only `w3c-vc-jsonld` (`Mosip` issuer, `ldp_vc`) and `mdoc` (`MockMdl` issuer, `mso_mdoc`) have a real sandbox issuer today. `sd-jwt-vc` has none; requesting it in Real Mode fails immediately with `FORMAT_MISMATCH` rather than faking it (Simulated Mode supports all three).
-- **Known caveat**: the sandbox's pre-auth transaction cache has been observed to intermittently lose a transaction between calls (a MOSIP-side infra issue, also reported on their community forum, not something this app can fix). Real Mode retries automatically and fails cleanly with the raw error visible in the inspector — switch to Simulated Mode (the toggle default) if the sandbox is having a bad day.
+- **Known issue (found and documented by us)**: right now Real Mode cannot complete issuance. The sandbox's eSignet rejects `send-otp` with `invalid_transaction` for a `transactionId` that `oauth-details` returned a moment earlier. On 2026-10-25 this failed 30 of 30 fresh attempts across both eSignet hosts, with no stickiness cookie in play, so it is a server-side fault and not something this client can work around. The app fails cleanly: the run is saved, the raw requests and responses are in the Protocol Inspector, and the banner says the flow failed. Full write-up with reproduction steps: [`docs/mosip-sandbox-bug-report.md`](docs/mosip-sandbox-bug-report.md). Use Simulated Mode (the default) for everything else.
 
 Config lives in `backend/.env` (see `backend/.env.example`) — the sandbox URLs and mock identity are public/pre-configured, no credentials needed.
 

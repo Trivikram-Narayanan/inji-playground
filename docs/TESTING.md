@@ -37,7 +37,7 @@ npm run dev
 ```
 
 - [ ] Backend starts cleanly, no errors in terminal — `curl http://localhost:3000/health` returns `{"status":"ok"}`
-- [ ] Frontend loads at `localhost:5173` — Selector, empty timeline placeholder, and top nav (New Test / Dashboard) all render
+- [ ] Frontend loads at `localhost:5173` — Selector, empty timeline placeholder, and top nav (00_Overview / 01_Laboratory / 02_Observatory) all render
 
 ---
 
@@ -45,12 +45,12 @@ npm run dev
 
 Do this first. If any of these fail, stop and file a bug before running the full matrix below — no point testing 20 more cases against a broken build.
 
-- [ ] Run a default Simulated-Mode test: leave everything at default (Inji Certify / Inji Wallet Mobile / Inji Verify / W3C VC JSON-LD, Real Mode off, Tamper off) → click **Run Test** → QR code appears
-- [ ] Click **Simulate Full Flow** — all 6 timeline steps complete in order: `credential_offer` → `token_exchange` → `credential_issued` → `authorization_request` → `presentation` → `verification_result`
-- [ ] Green "✅ Verification Valid" banner appears
+- [ ] Run a default Simulated-Mode test: leave everything at default (Inji Certify / Inji Wallet Mobile / Inji Verify / W3C VC JSON-LD, Real Mode off, Tamper off) → click **Run Experiment** → the "Credential Offer Created" step appears
+- [ ] Click **Advance** — all 6 timeline steps complete in order: `credential_offer` → `token_exchange` → `credential_issued` → `authorization_request` → `presentation` → `verification_result`
+- [ ] Green "CRYPTOGRAPHIC VERIFICATION PASSED" banner appears
 - [ ] Click a timeline step — raw JSON payload shows in the Protocol Inspector
-- [ ] Click **View Full Report** — modal shows outcome and duration, JSON export works
-- [ ] Dashboard shows this run in the history with correct stats
+- [ ] Click **View Certificate** — modal shows outcome and duration, JSON export works
+- [ ] 02_Observatory shows this run in the history with correct stats
 
 ---
 
@@ -61,7 +61,7 @@ Broader pass through individual UI behaviors, once the smoke test passes.
 - [ ] Real Mode toggle changes the mock-UIN hint text and disables/greys unsupported formats — flip Real Mode on, SD-JWT VC should show a "sim only" tag and look disabled
 - [ ] A Real Mode run shows a red **LIVE** badge next to "Live Timeline"
 - [ ] Timeline updates live without refreshing or clicking anything extra — open DevTools → Network, filter "stream": you should see an `EventSource` connection per run, not repeated polling requests
-- [ ] A FAILED run (e.g. Real Mode hitting the known sandbox bug, see [§8](#8-known-issues--dont-re-file-these)) shows the red "Sandbox Call Failed" banner, not a silent stall
+- [ ] A FAILED run (e.g. Real Mode hitting the known sandbox bug, see [§8](#8-known-issues--dont-re-file-these)) shows the red "FLOW FAILED (SEE PROTOCOL INSPECTOR)" banner, not a silent stall
 - [ ] A failed start shows a dismissible red error banner above the timeline
 - [ ] Dashboard stat cards (total / passed / failed / pass rate / most common error) match what you'd hand-count from the history table
 - [ ] Narrow the browser window to phone width (~400px) — layout stacks cleanly, nothing overlaps or clips
@@ -152,7 +152,7 @@ cd backend
 npm test
 ```
 
-- [ ] All 23 tests pass, 0 failures — if this number has changed, someone added or removed a test, not necessarily a problem, just note it
+- [ ] All 40 tests pass, 0 failures — if this number has changed, someone added or removed a test, not necessarily a problem, just note it
 
 ---
 
