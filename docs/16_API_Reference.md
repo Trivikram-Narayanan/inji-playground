@@ -1,35 +1,10 @@
 # API Reference
 
-This is the full reference for the backend (the BFF) that powers the Inji Interoperability Playground. If you just want to poke at it, jump to the [quick tour](#a-quick-tour-with-curl) and come back for the details later.
+Reference for the backend (BFF) behind the Inji Interoperability Playground. In a hurry? Start with the [curl tour](#a-quick-tour-with-curl).
 
-Everything here was checked against the running server, not just the code, so the examples are real responses (IDs and timestamps shortened where it helps).
+Every example is a real response from the running server. `05_API_Specification.md` is the older design spec and has drifted (nested `options`, different statuses). This page matches the code.
 
-> `05_API_Specification.md` is the original design-time spec. It predates several changes (the request body is flat now, statuses are different, and there are extra endpoints). Where the two disagree, this page is the one that matches the code.
-
-## Contents
-
-- [The basics](#the-basics)
-- [A quick tour with curl](#a-quick-tour-with-curl)
-- [Endpoints](#endpoints)
-  - [`GET /health`](#get-health)
-  - [`GET /`](#get-)
-  - [`GET /api/config/options`](#get-apiconfigoptions)
-  - [`POST /api/flows`](#post-apiflows)
-  - [`GET /api/flows/:id`](#get-apiflowsid)
-  - [`POST /api/flows/:id/advance`](#post-apiflowsidadvance)
-  - [`GET /api/flows/:id/events`](#get-apiflowsidevents)
-  - [`GET /api/flows/:id/events/stream`](#get-apiflowsideventsstream-live-updates)
-  - [`GET /api/flows/:id/report`](#get-apiflowsidreport)
-  - [`GET /api/reports`](#get-apireports)
-  - [`GET /api/reports/stats`](#get-apireportsstats)
-  - [`GET /api/reports/export`](#get-apireportsexport)
-  - [`GET /api/openapi.json` and `GET /api/docs`](#machine-readable-docs)
-- [How a flow moves through its states](#how-a-flow-moves-through-its-states)
-- [Tamper mode](#tamper-mode)
-- [Real Mode vs Simulated Mode](#real-mode-vs-simulated-mode)
-- [Error codes](#error-codes)
-- [Configuration](#configuration)
-- [Known quirks](#known-quirks)
+**Jump to:** [Basics](#the-basics) · [Endpoints](#endpoints) · [States](#how-a-flow-moves-through-its-states) · [Tamper mode](#tamper-mode) · [Real vs Simulated](#real-mode-vs-simulated-mode) · [Error codes](#error-codes) · [Config](#configuration) · [Quirks](#known-quirks)
 
 ---
 
@@ -39,21 +14,21 @@ Everything here was checked against the running server, not just the code, so th
 |---|---|
 | **Local base URL** | `http://localhost:3000` (API routes live under `/api`) |
 | **Hosted base URL** | `https://inji-playground.onrender.com` |
-| **Format** | JSON in, JSON out (the Markdown export and the SSE stream are the two exceptions) |
-| **Auth** | None. It's a public playground and the sandbox identity is a shared mock one. |
-| **CORS** | Controlled by `CORS_ALLOWED_ORIGINS`. Unset or `*` means any origin is allowed. |
+| **Format** | JSON, except the Markdown export and the SSE stream |
+| **Auth** | None (public playground, shared mock identity) |
+| **CORS** | `CORS_ALLOWED_ORIGINS`; unset or `*` allows any origin |
 | **Rate limits** | None built in. |
 
-Two things worth knowing up front:
+Two things to know first:
 
-1. **Timestamps are UTC but have no `Z`.** They look like `2026-10-25 16:40:16` (that's SQLite's `CURRENT_TIMESTAMP`). Treat them as UTC when you parse them. Plain `new Date("2026-10-25 16:40:16")` in JavaScript will read it as *local* time and be off by your timezone offset.
-2. **Field naming is mixed.** Request bodies and `flowId` on creation use camelCase. Database-backed responses (`GET /flows/:id`, reports, events) use snake_case, because they're rows straight from the database. The tables below call this out.
+1. **Timestamps are UTC with no `Z`** (`2026-10-25 16:40:16`, straight from SQLite). Add the `Z` before parsing, or JavaScript will read them as local time.
+2. **Naming is mixed.** Requests and the create response use camelCase. Anything read back from the database (flow, events, reports) is snake_case.
 
 ---
 
 ## A quick tour with curl
 
-Run one complete test, issue a credential, tamper with it, verify it, and read the verdict:
+One full run: issue, tamper, verify, read the verdict.
 
 ```bash
 B=http://localhost:3000/api
@@ -78,7 +53,7 @@ curl -s $B/flows/<flowId>/report
 # → {"outcome":"fail","error_code":"CREDENTIAL_EXPIRED", …}
 ```
 
-That's the whole lifecycle: **create → advance → report**. Everything else is for watching it happen, listing past runs, or exporting.
+That's the lifecycle: **create → advance → report**. Everything else watches, lists or exports.
 
 ---
 
@@ -111,7 +86,7 @@ A small service banner with links to the main routes.
 
 ### `GET /api/config/options`
 
-What the UI uses to build its dropdowns. Call this if you want to know which actors and formats the server currently accepts, and which formats can run in Real Mode.
+Feeds the UI dropdowns: which actors and formats the server accepts, and which can run in Real Mode.
 
 ```json
 {
@@ -127,13 +102,13 @@ What the UI uses to build its dropdowns. Call this if you want to know which act
 }
 ```
 
-`realModeSupported: false` means there's no sandbox issuer for that format, so a Real Mode request for it is rejected straight away (see [`FORMAT_MISMATCH`](#error-codes)).
+`realModeSupported: false` means no sandbox issuer exists for that format, so Real Mode rejects it immediately ([`FORMAT_MISMATCH`](#error-codes)).
 
 ---
 
 ### `POST /api/flows`
 
-Starts a test run. In Simulated Mode this creates the run and the credential offer. In Real Mode it also performs the live sandbox login and issuance before returning, so it can take several seconds.
+Starts a run. Simulated Mode creates the run and the credential offer. Real Mode also does the live sandbox login and issuance before returning, so it can take several seconds.
 
 **Request body**
 
@@ -147,7 +122,7 @@ Starts a test run. In Simulated Mode this creates the run and the credential off
 | `tamperMode` | boolean | no | Defaults to `false` |
 | `tamperType` | string | no | `bad-signature`, `claim-corruption`, or `expired`. Only checked when `tamperMode` is `true`, and effectively required then (see [tamper mode](#tamper-mode)). |
 
-> Note that `tamperMode` and `tamperType` sit at the top level, not nested under an `options` object like the old spec shows.
+> `tamperMode` and `tamperType` are top-level fields, not nested under `options`.
 
 **Response: `201 Created` (Simulated Mode)**
 
@@ -184,7 +159,7 @@ The sandbox issuance has already happened, so you get `CREDENTIAL_ISSUED` back a
 | `400` | The body failed validation | `{ "error": "Unknown format \"nope\"", "errorCode": "INVALID_REQUEST" }` |
 | `502` | The run was created but failed before it could finish (a Real Mode sandbox failure, an oversized QR offer, and so on) | `{ "error": "…", "flowId": "…", "errorCode": "FORMAT_MISMATCH" }` |
 
-The `502` still includes a `flowId` when one exists, and the failed run is saved. You can fetch its events and report like any other run, which is exactly what the UI does to show you what went wrong.
+A `502` still carries a `flowId` when one exists, and the failed run is saved. Fetch its events and report like any other run (the UI does exactly this).
 
 The validation messages you can get back:
 
@@ -251,9 +226,9 @@ Takes an issued credential the rest of the way: token exchange, issuance, the pr
 | `valid-but-expired` | The signature is fine but the credential is past its expiry. |
 | `error` | Something broke during issuance. The response is `{ "status": "FAILED", "result": "error" }`. |
 
-Calls are not guarded against being repeated. Advancing an already-completed run runs the later steps again, so call it once per run.
+Not guarded against repeats: advancing a finished run re-runs the later steps. Call it once per run.
 
-**Errors:** `500 { "error": "…" }` if something unexpected throws. Verification *failures* are not errors here. They come back as `200` with `result: "invalid"`, and the detail lives in the report.
+**Errors:** `500 { "error": "…" }` if something unexpected throws. Verification *failures* aren't errors: they return `200` with `result: "invalid"`, and the detail is in the report.
 
 ---
 
@@ -288,7 +263,7 @@ Two gotchas:
 
 ### `GET /api/flows/:id/events/stream` (live updates)
 
-A Server-Sent Events connection that pushes updates as the run progresses, so you don't have to poll. The UI uses this for the live timeline.
+Server-Sent Events: updates pushed as the run progresses, no polling. Drives the UI's live timeline.
 
 ```bash
 curl -N http://localhost:3000/api/flows/<flowId>/events/stream
@@ -311,15 +286,15 @@ data: {"type":"status","flowId":"f45cb3fc-…","data":{"status":"VERIFIED_VALID"
 
 A few practical notes:
 
-- **It only streams from the moment you connect.** It doesn't replay history. Connecting to a run that already finished just shows `: connected` and then silence. For history, use `/events`.
-- Open the stream *before* you call `advance` if you want to catch everything. A typical advance sends about 10 messages (5 status changes and 5 events).
-- The connection stays open until you close it. The server cleans up its subscription when you disconnect.
+- **No replay.** It streams only from the moment you connect; a finished run gives `: connected` and silence. Use `/events` for history.
+- Open it *before* calling `advance`. A typical advance sends about 10 messages (5 status, 5 events).
+- It stays open until you disconnect, and the server cleans up after you.
 
 ---
 
 ### `GET /api/flows/:id/report`
 
-The verdict for a finished run. Only exists once a run has reached a terminal state (or failed).
+The verdict for a finished or failed run. Doesn't exist before that.
 
 ```json
 {
@@ -387,7 +362,7 @@ The numbers behind the dashboard cards.
 
 ### `GET /api/reports/export`
 
-The Interoperability Matrix, in two shapes.
+The Interoperability Matrix as Markdown or JSON.
 
 | Query | Returns |
 |---|---|
@@ -403,7 +378,7 @@ The Interoperability Matrix, in two shapes.
 | external-mock | inji-wallet-mobile | inji-verify | w3c-vc-jsonld | ❌ Fail | DID_METHOD_GAP |
 ```
 
-An unrecognised `format` value (say `?format=xml`) doesn't error. It quietly falls back to JSON.
+Any other `format` value (say `xml`) silently falls back to JSON.
 
 ---
 
@@ -414,7 +389,7 @@ An unrecognised `format` value (say `?format=xml`) doesn't error. It quietly fal
 | `GET /api/openapi.json` | The OpenAPI 3.0 spec as JSON, for importing into Postman, Insomnia, or a code generator |
 | `GET /api/docs` | Swagger UI, served as a page, for trying requests in the browser |
 
-The OpenAPI file is hand-maintained in `backend/src/openapi.ts`. If this page and that file ever disagree, trust the code in `backend/src/routes/`.
+The OpenAPI file is hand-maintained in `backend/src/openapi.ts`. If it disagrees with this page, trust `backend/src/routes/`.
 
 ---
 
@@ -446,7 +421,7 @@ At any point it can drop into `FAILED` instead (with `result: "error"`). The thr
 
 ## Tamper mode
 
-Tamper mode corrupts the credential *after* it's been legitimately issued and *before* it reaches the verifier, to prove the verifier notices. In Real Mode it mutates the genuinely signed credential, so the failures are real, not scripted.
+Tamper mode corrupts a legitimately issued credential before it reaches the verifier, to prove the verifier notices. In Real Mode it mutates the genuinely signed credential, so the failures are real.
 
 | `tamperType` | What it does |
 |---|---|
@@ -467,9 +442,9 @@ Tamper mode corrupts the credential *after* it's been legitimately issued and *b
 | SD-JWT VC | `claim-corruption` | `invalid` | `CLAIM_MISMATCH` |
 | mDoc / mDL | `claim-corruption` | `invalid` | `CLAIM_MISMATCH` |
 
-The W3C row is not a bug. JSON-LD signs the entire document as one unit, so it can't tell a changed claim apart from a bad signature. SD-JWT and mDoc sign digests of the claims separately, which is why they can report `CLAIM_MISMATCH` while the signature itself is still valid.
+The W3C row isn't a bug: JSON-LD signs the whole document as one unit, so it can't tell a changed claim from a bad signature. SD-JWT and mDoc sign claim digests separately, so they can report `CLAIM_MISMATCH` with a still-valid signature.
 
-One more built-in scenario: with `issuer: "external-mock"`, `wallet: "inji-wallet-mobile"` and `format: "w3c-vc-jsonld"`, the run fails with `DID_METHOD_GAP`. That's the cross-ecosystem case where the issuer's DID method isn't one the wallet understands.
+Cross-ecosystem case: `issuer: "external-mock"` with `format: "w3c-vc-jsonld"` fails with `DID_METHOD_GAP` (the issuer uses `did:jwk`, which the MOSIP verifier doesn't accept).
 
 ---
 
@@ -484,9 +459,9 @@ One more built-in scenario: with `issuer: "external-mock"`, `wallet: "inji-walle
 | After `POST /flows` | `OFFER_CREATED` | `CREDENTIAL_ISSUED` (issuance already done) |
 | Determinism | Fully deterministic | Depends on someone else's servers |
 
-Real Mode logs in headlessly with the sandbox's mock identity (UIN `5860356276`, OTP `111111`), exchanges tokens through the Mimoto BFF, and gets a real signed credential from the format's Certify host. Verification is then done locally with real cryptography.
+Real Mode logs in headlessly with the mock identity (UIN `5860356276`, OTP `111111`), exchanges tokens through Mimoto, and gets a real signed credential from the format's Certify host. Verification is then done locally with real cryptography.
 
-**Heads up:** at the time of writing, the sandbox itself fails at the `send-otp` step with `invalid_transaction`. That's a MOSIP-side issue, not something this API can fix. You'll get a `502` with a clear message and a saved, inspectable failed run. Simulated Mode is unaffected.
+**Heads up:** the sandbox currently fails at `send-otp` with `invalid_transaction`. That's on MOSIP's side. You get a `502`, a clear message and a saved failed run. Simulated Mode is unaffected.
 
 ---
 
@@ -507,13 +482,13 @@ These appear as `error_code` on reports and as `errorCode` on failed start reque
 | `TIMEOUT` | A step took longer than `STEP_TIMEOUT_MS` | Slow or hung sandbox |
 | `UNKNOWN_ERROR` | Anything that didn't match the above | Includes the sandbox `invalid_transaction` failure |
 
-If `ANTHROPIC_API_KEY` is set, failed Real Mode steps get an AI-written explanation of the likely root cause. Without a key, a built-in heuristic classifier is used instead, and the API behaves identically either way.
+With `ANTHROPIC_API_KEY` set, failed Real Mode steps get an AI-written root-cause explanation; without it a built-in heuristic classifier is used. The API behaves the same either way.
 
 ---
 
 ## Configuration
 
-Set these in `backend/.env` (copy `backend/.env.example` to start). Every one has a working default, so a fresh checkout runs with no `.env` at all.
+Set in `backend/.env` (start from `.env.example`). Everything has a default, so a fresh checkout runs without one.
 
 | Variable | Default | What it does |
 |---|---|---|
@@ -533,7 +508,7 @@ Set these in `backend/.env` (copy `backend/.env.example` to start). Every one ha
 
 ## Known quirks
 
-Things that look odd but are currently how it works, so you don't lose an afternoon to them:
+Odd but current behavior:
 
 - **`payload` in `/events` is a string**, not an object. Parse it.
 - **Timestamps are UTC without a `Z`.** Append one before parsing.
@@ -541,5 +516,4 @@ Things that look odd but are currently how it works, so you don't lose an aftern
 - **Re-advancing a finished run** re-runs the later steps instead of rejecting the call.
 - **`/reports/export?format=<anything-else>`** returns JSON rather than an error.
 - **Reports and runs live in a local SQLite file** (`backend/data/playground.sqlite`). On Render's free tier that file doesn't survive a redeploy, so the dashboard history resets.
-- **Free-tier cold starts.** The hosted backend can take a while to wake up on the first request after being idle.
-- **Real Mode depends on a third party.** See above.
+- **Free-tier cold starts:** the hosted backend is slow on the first request after idling.
