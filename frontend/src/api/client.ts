@@ -1,7 +1,11 @@
 import axios from 'axios';
 import type { FlowConfig, FlowStatus, FlowEvent, InteropReport, ConfigOptions } from '../types';
 
-export const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:3000/api';
+const DEFAULT_API_BASE = import.meta.env.PROD
+  ? 'https://inji-playground-backend.onrender.com/api'
+  : 'http://localhost:3000/api';
+
+export const API_BASE = import.meta.env.VITE_API_BASE ?? DEFAULT_API_BASE;
 
 export const apiClient = axios.create({
   baseURL: API_BASE,
