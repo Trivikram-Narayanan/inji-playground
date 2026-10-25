@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Copy, Check, Terminal, FileCode } from 'lucide-react';
 import type { FlowEvent } from '../types';
+import { parseDbTimestamp } from '../utils/time';
 
 interface ProtocolInspectorProps {
   event: FlowEvent | null;
@@ -80,7 +81,7 @@ export const ProtocolInspector: React.FC<ProtocolInspectorProps> = ({ event }) =
       {/* Footer telemetry */}
       <div className="px-3 py-1.5 bg-[#0f1115] border-t border-[#ffffff0f] text-[10px] text-[#535965] flex items-center justify-between">
         <span>HASH_ID: {event.id}</span>
-        <span className="text-[#8a919e]">{new Date(event.timestamp).toLocaleTimeString()}</span>
+        <span className="text-[#8a919e]">{parseDbTimestamp(event.timestamp).toLocaleTimeString()}</span>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Download, FileText, CheckCircle2, XCircle, AlertTriangle, Clock } from 'lucide-react';
 import type { InteropReport } from '../types';
+import { parseDbTimestamp } from '../utils/time';
 
 interface ReportViewProps {
   report: InteropReport;
@@ -126,7 +127,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ report, onClose }) => {
               <Clock size={11} />
               LATENCY: {report.duration_ms}ms
             </span>
-            <span>RECORDED_AT: {new Date(report.created_at).toLocaleString()}</span>
+            <span>RECORDED_AT: {parseDbTimestamp(report.created_at).toLocaleString()}</span>
           </div>
         </div>
 

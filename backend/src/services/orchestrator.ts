@@ -43,7 +43,7 @@ async function insertEvent(db: any, flowId: string, e: ProtoEvent) {
 
 async function writeReport(db: any, flow: any, outcome: 'pass' | 'fail', errorCode: string | null, errorDetail: string | null, proofType: string) {
   const firstEvent = await db.get(`SELECT timestamp FROM protocol_events WHERE flow_id = ? ORDER BY timestamp ASC LIMIT 1`, [flow.id]);
-  const durationMs = firstEvent ? Math.max(1000, new Date().getTime() - new Date(firstEvent.timestamp).getTime()) : 2400;
+  const durationMs = firstEvent ? Math.max(1000, new Date().getTime() - new Date(`${firstEvent.timestamp.replace(' ', 'T')}Z`).getTime()) : 2400; // SQLite CURRENT_TIMESTAMP is UTC
   await db.run(
     `INSERT INTO reports (flow_id, issuer, wallet, verifier, format, proof_type, outcome, duration_ms, error_code, error_detail)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,

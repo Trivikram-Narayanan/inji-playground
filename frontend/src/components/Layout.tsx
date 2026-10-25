@@ -20,7 +20,7 @@ export const Layout: React.FC = () => {
       </a>
 
       {/* Flat hairline top bar with monospace notation */}
-      <header className="px-6 py-3 border-b border-[#ffffff14] bg-[#090a0c]/90 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between">
+      <header className="px-6 py-3 border-b border-[#ffffff14] bg-[#090a0c]/90 backdrop-blur-md sticky top-0 z-40 flex flex-wrap items-center justify-between gap-y-2">
         <div className="flex items-center gap-3 font-mono">
           <Link to="/" className="text-sm font-bold tracking-tight text-[#f0f2f5] hover:text-[#e5a93c] transition-colors flex items-center gap-2">
             <span className="w-2 h-2 bg-[#e5a93c] inline-block" />
@@ -30,7 +30,7 @@ export const Layout: React.FC = () => {
         </div>
 
         {/* Text-only nav with [ACTIVE] bracket notation */}
-        <nav className="flex items-center gap-6 font-mono text-xs tracking-wider" aria-label="Primary">
+        <nav className="flex items-center gap-4 sm:gap-6 font-mono text-xs tracking-wider" aria-label="Primary">
           <Link
             to="/"
             className={`transition-colors py-1 ${

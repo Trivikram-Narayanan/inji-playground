@@ -154,6 +154,7 @@ Full specification suite lives in [`files/`](files/):
 | [`10_Report_Templates.md`](files/10_Report_Templates.md) | Report & gap write-up formats |
 | [`12_Enhancements_And_Extensions.md`](files/12_Enhancements_And_Extensions.md) | Mermaid diagrams, same-device flow, Docker, and CI matrix |
 | [`13_Recent_Pull_Changelog_And_Architecture_Updates.md`](files/13_Recent_Pull_Changelog_And_Architecture_Updates.md) | Config-driven Real Mode, LLM triage, schema fixes |
+| [`16_API_Reference.md`](docs/16_API_Reference.md) | Full API reference: every endpoint, request/response, states, error codes |
 | [`Inji_Interoperability_Playground_Spec.md`](Inji_Interoperability_Playground_Spec.md) | Phased build plan |
 
 **Known gap**: a full local Docker Compose stack for Certify/Wallet/Verify (`08_Environment_Setup_Guide.md` Option A) is out of scope on this machine (no Docker, 8GB RAM) — Real Mode uses the MOSIP Collab sandbox (Option B) instead.

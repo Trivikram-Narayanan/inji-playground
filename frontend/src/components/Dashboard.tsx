@@ -4,6 +4,7 @@ import { Activity, CheckCircle2, XCircle, Percent, AlertOctagon } from 'lucide-r
 import type { InteropReport } from '../types';
 import { API_BASE } from '../api/client';
 import { LabCard, BracketBadge } from './ui/LabPrimitives';
+import { parseDbTimestamp } from '../utils/time';
 
 export const Dashboard: React.FC = () => {
   const [reports, setReports] = useState<InteropReport[]>([]);
@@ -251,7 +252,7 @@ export const Dashboard: React.FC = () => {
               {reports.map((r) => (
                 <tr key={r.flow_id} className="hover:bg-[#ffffff05] transition-colors">
                   <td className="px-3 py-2.5 text-[#535965] whitespace-nowrap">
-                    {new Date(r.created_at).toLocaleTimeString()}
+                    {parseDbTimestamp(r.created_at).toLocaleTimeString()}
                   </td>
                   <td className="px-3 py-2.5 font-bold text-[#f0f2f5]">{r.format}</td>
                   <td className="px-3 py-2.5 text-[#8a919e]">

@@ -4,6 +4,7 @@ import { CheckCircle2, Circle, Loader2, Copy, Check, List, Play } from 'lucide-r
 import SequenceDiagram from './SequenceDiagram';
 import type { FlowStatus, FlowEvent } from '../types';
 import { TERMINAL_STATUSES, PROTOCOL_STEPS } from '../types';
+import { parseDbTimestamp } from '../utils/time';
 
 
 export { TERMINAL_STATUSES };
@@ -54,6 +55,7 @@ export const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
   };
 
   const isTerminal = flow.status ? TERMINAL_STATUSES.includes(flow.status as any) : false;
+  const isFailed = flow.status === 'FAILED' || flow.result === 'error';
 
   return (
     <div className="flex flex-col gap-4 h-full">
@@ -194,7 +196,7 @@ export const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
           className={`p-3.5 border flex flex-col sm:flex-row items-center justify-between gap-3 font-mono text-xs ${
             flow.result === 'valid'
               ? 'bg-[#22c55e]/10 border-[#22c55e]/40 text-[#22c55e]'
-              : flow.result === 'invalid'
+              : flow.result === 'invalid' || isFailed
               ? 'bg-[#ff4d2e]/10 border-[#ff4d2e]/40 text-[#ff4d2e]'
               : 'bg-[#e5a93c]/10 border-[#e5a93c]/40 text-[#e5a93c]'
           }`}
@@ -204,6 +206,8 @@ export const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
             <span className="font-bold tracking-wider">
               {flow.result === 'valid'
                 ? 'CRYPTOGRAPHIC VERIFICATION PASSED'
+                : isFailed
+                ? 'FLOW FAILED (SEE PROTOCOL INSPECTOR)'
                 : flow.result === 'invalid'
                 ? 'VERIFICATION REJECTED (SIGNATURE_MISMATCH)'
                 : 'CREDENTIAL EXPIRED (REVOKED_TIMESTAMP)'}
@@ -269,7 +273,7 @@ export const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
                   {event && (
                     <div className="text-[10px] text-[#535965] mt-1 flex items-center justify-between">
                       <span>EVENT_ID: #{event.id.slice(0, 8)}</span>
-                      <span>{new Date(event.timestamp).toLocaleTimeString()}</span>
+                      <span>{parseDbTimestamp(event.timestamp).toLocaleTimeString()}</span>
                     </div>
                   )}
                 </div>
