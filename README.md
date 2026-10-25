@@ -1,9 +1,9 @@
 # INJI_INTEROP // CONSOLE
 ### Cryptographic Protocol Forensics & Interoperability Playground for MOSIP and Global VC Ecosystems
 
-[![Frontend Deployment](https://img.shields.io/badge/Frontend-Vercel-black?style=flat-square&logo=vercel)](https://inji-playground-mosip.vercel.app)
-[![Backend API](https://img.shields.io/badge/Backend-Render-46E3B7?style=flat-square&logo=render)](https://inji-playground.onrender.com)
-[![API Docs](https://img.shields.io/badge/Swagger-OpenAPI_3.0-85EA2D?style=flat-square&logo=swagger)](https://inji-playground.onrender.com/api/docs)
+[![Frontend Deployment](https://img.shields.io/badge/Frontend-Vercel-black?style=flat-square&logo=vercel)](https://inji-playground.vercel.app)
+[![Backend API](https://img.shields.io/badge/Backend-Render-46E3B7?style=flat-square&logo=render)](https://inji-playground-backend.onrender.com)
+[![API Docs](https://img.shields.io/badge/Swagger-OpenAPI_3.0-85EA2D?style=flat-square&logo=swagger)](https://inji-playground-backend.onrender.com/api/docs)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg?style=flat-square)](LICENSE)
 
 ---
@@ -12,10 +12,10 @@
 
 | Component | Platform | Live URL | Status |
 | :--- | :--- | :--- | :--- |
-| **Frontend Console** | Vercel | [**inji-playground-mosip.vercel.app**](https://inji-playground-mosip.vercel.app) | 🟢 Operational |
-| **Backend BFF API** | Render | [**inji-playground.onrender.com**](https://inji-playground.onrender.com) | 🟢 Operational |
-| **Interactive API Docs** | Swagger UI | [**inji-playground.onrender.com/api/docs**](https://inji-playground.onrender.com/api/docs) | 🟢 Live |
-| **API Health Check** | Render | [**inji-playground.onrender.com/health**](https://inji-playground.onrender.com/health) | 🟢 `{"status":"ok"}` |
+| **Frontend Console** | Vercel | [**inji-playground.vercel.app**](https://inji-playground.vercel.app) | 🟢 Operational |
+| **Backend BFF API** | Render | [**inji-playground-backend.onrender.com**](https://inji-playground-backend.onrender.com) | 🟢 Operational |
+| **Interactive API Docs** | Swagger UI | [**inji-playground-backend.onrender.com/api/docs**](https://inji-playground-backend.onrender.com/api/docs) | 🟢 Live |
+| **API Health Check** | Render | [**inji-playground-backend.onrender.com/health**](https://inji-playground-backend.onrender.com/health) | 🟢 `{"status":"ok"}` |
 
 ---
 

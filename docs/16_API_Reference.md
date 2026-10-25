@@ -13,7 +13,7 @@ Every example is a real response from the running server. `05_API_Specification.
 | | |
 |---|---|
 | **Local base URL** | `http://localhost:3000` (API routes live under `/api`) |
-| **Hosted base URL** | `https://inji-playground.onrender.com` |
+| **Hosted base URL** | `https://inji-playground-backend.onrender.com` |
 | **Format** | JSON, except the Markdown export and the SSE stream |
 | **Auth** | None (public playground, shared mock identity) |
 | **CORS** | `CORS_ALLOWED_ORIGINS`; unset or `*` allows any origin |
