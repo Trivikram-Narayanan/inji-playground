@@ -10,6 +10,7 @@ export const Dashboard: React.FC = () => {
   const [reports, setReports] = useState<InteropReport[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -22,6 +23,7 @@ export const Dashboard: React.FC = () => {
         setStats(statsRes.data);
       } catch (err) {
         console.error('Failed to fetch dashboard data:', err);
+        setLoadError('Could not reach the backend, so the run history and stats below are not available.');
       } finally {
         setIsLoading(false);
       }
@@ -99,6 +101,13 @@ export const Dashboard: React.FC = () => {
           </BracketBadge>
         </div>
       </div>
+
+      {loadError && (
+        <div role="alert" className="bg-[#ff4d2e]/10 border border-[#ff4d2e]/40 text-[#ff4d2e] p-4 text-xs font-mono">
+          <div className="font-bold tracking-wider">DATA_UNAVAILABLE :: BACKEND_UNREACHABLE</div>
+          <div className="mt-1 text-[#f0f2f5]">{loadError}</div>
+        </div>
+      )}
 
       {/* Telemetry Stat Cards: Neutral outline icons + Warm Gold / Crimson semantics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">

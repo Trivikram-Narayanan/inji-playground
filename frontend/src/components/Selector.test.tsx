@@ -40,4 +40,18 @@ describe('Selector', () => {
     fireEvent.click(toggle);
     expect(toggle.checked).toBe(true);
   });
+
+  it('disables sim-only formats in Real Mode and switches off a selected one', async () => {
+    mockedAxios.get.mockRejectedValue(new Error('network error'));
+    const onRunTest = vi.fn();
+    render(<Selector onRunTest={onRunTest} />);
+
+    await screen.findByText('Inji Certify');
+    fireEvent.click(screen.getByRole('button', { name: /SD-JWT/i }));
+    fireEvent.click(screen.getByLabelText('Toggle Real Mode'));
+
+    expect(screen.getByRole('button', { name: /SD-JWT/i })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: /run test/i }));
+    expect(onRunTest).toHaveBeenCalledWith(expect.objectContaining({ mode: 'real', format: 'w3c-vc-jsonld' }));
+  });
 });

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { CheckCircle2, Circle, Loader2, Copy, Check, List, Play } from 'lucide-react';
+import { CheckCircle2, Circle, Loader2, Copy, Check, List, Play, XCircle } from 'lucide-react';
 import SequenceDiagram from './SequenceDiagram';
 import type { FlowStatus, FlowEvent } from '../types';
 import { TERMINAL_STATUSES, PROTOCOL_STEPS } from '../types';
@@ -56,6 +56,14 @@ export const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
 
   const isTerminal = flow.status ? TERMINAL_STATUSES.includes(flow.status as any) : false;
   const isFailed = flow.status === 'FAILED' || flow.result === 'error';
+  const verdictPayload = flow.events.find((e) => e.step === 'verification_result')?.payload;
+  let verdictErrorCode: string | undefined;
+  try {
+    const parsed = typeof verdictPayload === 'string' ? JSON.parse(verdictPayload) : verdictPayload;
+    verdictErrorCode = parsed?.errorCode ?? undefined;
+  } catch {
+    /* payload wasn't JSON; fall back to the generic label */
+  }
 
   return (
     <div className="flex flex-col gap-4 h-full">
@@ -209,8 +217,8 @@ export const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
                 : isFailed
                 ? 'FLOW FAILED (SEE PROTOCOL INSPECTOR)'
                 : flow.result === 'invalid'
-                ? 'VERIFICATION REJECTED (SIGNATURE_MISMATCH)'
-                : 'CREDENTIAL EXPIRED (REVOKED_TIMESTAMP)'}
+                ? `VERIFICATION REJECTED (${verdictErrorCode ?? 'UNKNOWN_ERROR'})`
+                : `CREDENTIAL EXPIRED (${verdictErrorCode ?? 'CREDENTIAL_EXPIRED'})`}
             </span>
           </div>
           <button
@@ -230,6 +238,7 @@ export const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
           {PROTOCOL_STEPS.map((step, index) => {
             const event = flow.events.find((e) => e.step === step.id);
             const isCompleted = event?.status === 'success';
+            const isErrored = event?.status === 'error';
             const isPending = !event && (index === 0 || completedStepIds.includes(PROTOCOL_STEPS[index - 1].id));
 
             return (
@@ -253,6 +262,8 @@ export const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
                 <div className="mt-0.5">
                   {isCompleted ? (
                     <CheckCircle2 className="text-[#22c55e]" size={14} aria-hidden="true" />
+                  ) : isErrored ? (
+                    <XCircle className="text-[#ff4d2e]" size={14} aria-hidden="true" />
                   ) : isPending ? (
                     <Loader2 className="text-[#e5a93c] animate-spin" size={14} aria-hidden="true" />
                   ) : (
@@ -262,7 +273,7 @@ export const LiveFlowTimeline: React.FC<LiveFlowTimelineProps> = ({
 
                 <div className="flex-1 min-w-0 font-mono">
                   <div className="flex items-center justify-between gap-2">
-                    <span className={`text-xs font-bold ${isCompleted ? 'text-[#f0f2f5]' : isPending ? 'text-[#e5a93c]' : 'text-[#535965]'}`}>
+                    <span className={`text-xs font-bold ${isCompleted ? 'text-[#f0f2f5]' : isErrored ? 'text-[#ff4d2e]' : isPending ? 'text-[#e5a93c]' : 'text-[#535965]'}`}>
                       {step.label}
                     </span>
                     <span className="text-[10px] text-[#8a919e] uppercase border border-[#ffffff14] px-1.5 py-0.2 bg-[#090a0c]">

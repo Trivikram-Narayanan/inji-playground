@@ -59,7 +59,16 @@ export const Selector: React.FC<SelectorProps> = ({ onRunTest, isLoading = false
   }, []);
 
   const handleSelect = (key: keyof FlowConfig, value: any) => {
-    setConfig((prev) => ({ ...prev, [key]: value }));
+    setConfig((prev) => {
+      const next = { ...prev, [key]: value };
+      // Entering Real Mode with a sim-only format selected: fall back to a format the sandbox supports.
+      if (key === 'mode' && value === 'real') {
+        const current = options?.formats.find((f) => f.id === next.format);
+        const fallback = options?.formats.find((f) => f.realModeSupported);
+        if (current && !current.realModeSupported && fallback) next.format = fallback.id;
+      }
+      return next;
+    });
   };
 
   const OptionCard = ({ icon: Icon, title, ids, selected, onSelect }: any) => (
@@ -172,6 +181,7 @@ export const Selector: React.FC<SelectorProps> = ({ onRunTest, isLoading = false
                   <button
                     key={f.id}
                     onClick={() => handleSelect('format', f.id)}
+                    disabled={unavailableInReal}
                     aria-pressed={isSelected}
                     title={unavailableInReal ? 'No sandbox issuer offers this format in Real Mode - switch to Simulated Mode' : undefined}
                     className={`px-3 py-1 text-xs font-mono transition-colors border rounded-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-[#e5a93c] ${
